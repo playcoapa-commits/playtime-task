@@ -3,7 +3,7 @@ import axios from 'axios';
 import './App.css';
 
 // Recuerda: si estás en la misma PC usa localhost. 
-const API_URL = 'http://localhost:3001';
+const API_URL = 'https://playtime-backend-1g83.onrender.com';
 
 function App() {
   const [view, setView] = useState('login'); // 'login', 'tasks', 'admin'
