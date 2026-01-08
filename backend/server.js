@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const cron = require('node-cron');
-const { User, Assignment, Task } = require('./models'); // Aseguramos importar Task también
+const { User, Assignment, Task } = require('./models');
 const { assignDailyTasks } = require('./logic');
 
 const app = express();
@@ -48,15 +48,46 @@ app.get('/my-tasks/:userId', async (req, res) => {
     }
 });
 
-// 3. Marcar tarea como completada
+// 4. COMPLETAR TAREA (Gamificación)
 app.post('/complete/:id', async (req, res) => {
     try {
-        await Assignment.findByIdAndUpdate(
-            req.params.id,
-            { status: 'completada', completedAt: new Date() } // Guardamos la fecha real
-        );
-        res.json({ success: true });
-    } catch (error) {
+        const assignment = await Assignment.findById(req.params.id);
+        if (!assignment) return res.status(404).json({ error: 'Asignación no encontrada' });
+
+        assignment.status = 'completada';
+        assignment.completedAt = new Date();
+        await assignment.save();
+
+        // Lógica de Gamificación
+        const user = await User.findById(assignment.user);
+        if (user) {
+            user.xp += 50; // XP por tarea
+
+            // Insignias
+            const badges = user.badges || [];
+            if (!badges.includes('🌱 Novato')) user.badges = ['🌱 Novato'];
+            const newBadges = [];
+
+            if (user.xp >= 500 && !user.badges.includes('🥉 Bronce')) newBadges.push('🥉 Bronce');
+            if (user.xp >= 2000 && !user.badges.includes('🥈 Plata')) newBadges.push('🥈 Plata');
+            if (user.xp >= 5000 && !user.badges.includes('🥇 Oro')) newBadges.push('🥇 Oro');
+            if (user.xp >= 10000 && !user.badges.includes('💎 Diamante')) newBadges.push('💎 Diamante');
+
+            if (newBadges.length > 0) {
+                user.badges = [...user.badges, ...newBadges];
+            }
+            await user.save();
+
+            return res.json({
+                success: true,
+                xp: user.xp,
+                newBadges,
+                allBadges: user.badges
+            });
+        }
+
+        res.json({ success: true, xp: 0, newBadges: [] });
+    } catch (err) {
         res.status(500).json({ error: 'Error al completar tarea' });
     }
 });

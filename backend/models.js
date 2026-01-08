@@ -4,7 +4,9 @@ const mongoose = require('mongoose');
 const userSchema = new mongoose.Schema({
     name: { type: String, required: true },
     role: { type: String, default: 'general' },
-    active: { type: Boolean, default: true }
+    active: { type: Boolean, default: true },
+    xp: { type: Number, default: 0 },
+    badges: { type: [String], default: ['🌱 Novato'] }
 });
 
 // 2. Esquema de Tarea

@@ -93,13 +93,24 @@ function App() {
   };
 
   const completeTask = (id) => {
-    axios.post(`${API_URL}/complete/${id}`).then(() => {
-      // Disparamos confeti al completar
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
+    axios.post(`${API_URL}/complete/${id}`).then((res) => {
+      // Actualizar usuario local con nueva XP y medallas
+      if (res.data.success && currentUser) {
+        setCurrentUser(prev => ({
+          ...prev,
+          xp: res.data.xp,
+          badges: res.data.allBadges
+        }));
+
+        // Si ganó una nueva insignia, mostramos alerta especial
+        if (res.data.newBadges && res.data.newBadges.length > 0) {
+          alert(`🎉 ¡FELICIDADES! Has desbloqueado: ${res.data.newBadges.join(', ')}`);
+          confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+        } else {
+          // Confeti normal por completar tarea
+          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        }
+      }
       loadTasks(currentUser._id);
     });
   };
@@ -109,6 +120,10 @@ function App() {
     const date = new Date(dateString);
     return date.toLocaleString('es-MX', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' });
   };
+
+  // Helper para nivel
+  const getLevel = (xp) => Math.floor((xp || 0) / 1000) + 1;
+  const getNextLevelXp = (level) => level * 1000;
 
   // --- VISTA 1: LOGIN ---
   if (view === 'login') {
@@ -245,15 +260,38 @@ function App() {
     );
   }
 
-  // --- VISTA 3: TAREAS DEL EMPLEADO ---
+  // --- VISTA 3: TAREAS DEL EMPLEADO (CON GAMIFICATION) ---
+  const level = currentUser ? getLevel(currentUser.xp) : 1;
+  const nextLevelXp = getNextLevelXp(level);
+  const currentLevelBaseXp = getNextLevelXp(level - 1);
+  const progressPercent = currentUser ? Math.min(100, Math.max(0, ((currentUser.xp || 0) - currentLevelBaseXp) / (nextLevelXp - currentLevelBaseXp) * 100)) : 0;
+
   return (
     <div className="container">
-      <div className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+      <div className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
         <h2>Hola, {currentUser.name} 👋</h2>
         <button onClick={() => setView('login')} className="back-btn">⬅ Salir</button>
       </div>
 
-      <h3 style={{ textAlign: 'left' }}>Tus pendientes hoy:</h3>
+      {/* GAMIFICATION HEADER */}
+      <div className="user-level-info">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span className="level-badge">Nivel {level}</span>
+          <span className="xp-text">{currentUser.xp || 0} / {nextLevelXp} XP</span>
+        </div>
+        <div className="xp-progress-bar">
+          <div className="xp-fill" style={{ width: `${progressPercent}%` }}></div>
+        </div>
+        {currentUser.badges && currentUser.badges.length > 0 && (
+          <div className="badges-container">
+            {currentUser.badges.map((badge, i) => (
+              <span key={i} className="badge-item">{badge}</span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <h3 style={{ textAlign: 'left', marginTop: '20px' }}>Tus pendientes hoy:</h3>
       <div className="task-list">
         {tasks.length === 0 && <div className="empty">¡Todo limpio! 🎉 <br /><small>Has terminado todo por hoy</small></div>}
 
@@ -261,7 +299,7 @@ function App() {
           <div key={assign._id} className={`card ${assign.status}`}>
             <div className="card-info">
               <h4>{assign.task.title}</h4>
-              <small>{assign.status === 'completada' ? '✅ Tarea Completada' : '⏳ Pendiente de realizar'}</small>
+              <small>{assign.status === 'completada' ? '✅ Tarea Completada' : '⏳ Pendiente de realizar (+50 XP)'}</small>
             </div>
             {assign.status === 'pendiente' && (
               <button onClick={() => completeTask(assign._id)} className="done-btn">
