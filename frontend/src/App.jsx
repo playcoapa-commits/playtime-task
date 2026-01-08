@@ -281,7 +281,18 @@ function App() {
                   <td className="time-cell">
                     {log.completedAt ? formatDate(log.completedAt) : '-'}
                   </td>
-                  <td><strong>{log.user?.name || 'Desconocido'}</strong></td>
+                  <td>
+                    <strong>{log.user?.name || 'Desconocido'}</strong>
+                    {log.status !== 'completada' && (
+                      <button
+                        onClick={() => delegateTask(log._id)}
+                        style={{ fontSize: '0.7rem', marginLeft: '5px', background: '#FF9800', border: 'none', cursor: 'pointer', padding: '2px 5px', borderRadius: '4px' }}
+                        title="Reasignar Tarea"
+                      >
+                        🔄
+                      </button>
+                    )}
+                  </td>
                   <td>{log.task?.title || 'Tarea borrada'}</td>
                 </tr>
               ))}

@@ -270,6 +270,27 @@ app.post('/assign', async (req, res) => {
     }
 });
 
+// 5.1 DELEGAR / REASIGNAR TAREA
+app.put('/assignments/:id/delegate', async (req, res) => {
+    const password = req.headers['x-admin-password'];
+    if (password !== ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Contraseña incorrecta' });
+    }
+
+    try {
+        const { newUserId } = req.body;
+        const assignment = await Assignment.findById(req.params.id);
+        if (!assignment) return res.status(404).json({ error: 'Asignación no encontrada' });
+
+        assignment.user = newUserId;
+        await assignment.save();
+
+        res.json({ success: true, message: 'Tarea reasignada' });
+    } catch (err) {
+        res.status(500).json({ error: 'Error al reasignar' });
+    }
+});
+
 // 6. Endpoint para forzar asignación (Manual)
 app.post('/force-assign', async (req, res) => {
     await assignDailyTasks();
