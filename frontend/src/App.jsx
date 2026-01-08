@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import confetti from 'canvas-confetti';
 import './App.css';
 
 // Recuerda: si estás en la misma PC usa localhost. 
@@ -63,6 +64,12 @@ function App() {
 
   const completeTask = (id) => {
     axios.post(`${API_URL}/complete/${id}`).then(() => {
+      // Disparamos confeti al completar
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
       loadTasks(currentUser._id);
     });
   };
@@ -81,12 +88,11 @@ function App() {
         <div className="user-grid">
           {users.map(u => (
             <button key={u._id} onClick={() => login(u)} className="user-btn">
-              {u.name}
+              <span>👤 {u.name}</span>
             </button>
           ))}
         </div>
         <br />
-        <hr />
         <button onClick={enterAdminMode} className="admin-link">
           🔒 Panel de Gerencia
         </button>
@@ -98,9 +104,9 @@ function App() {
   if (view === 'admin') {
     return (
       <div className="container admin-container">
-        <div className="header">
+        <div className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2>📊 Reporte Operativo</h2>
-          <button onClick={() => setView('login')} className="back-btn">Salir</button>
+          <button onClick={() => setView('login')} className="back-btn">⬅ Salir</button>
         </div>
 
         {/* NUEVA SECCIÓN DE ESTADÍSTICAS */}
@@ -119,14 +125,14 @@ function App() {
               <tbody>
                 {stats.map((stat, idx) => (
                   <tr key={idx}>
-                    <td>{stat.name}</td>
+                    <td><strong>{stat.name}</strong></td>
                     <td>{stat.total}</td>
                     <td>{stat.completed}</td>
                     <td>
                       <div className="progress-bar-container">
                         <div
                           className="progress-bar"
-                          style={{ width: `${stat.percentage}%`, backgroundColor: stat.percentage >= 80 ? '#4CAF50' : '#FFC107' }}
+                          style={{ width: `${stat.percentage}%`, background: stat.percentage >= 80 ? 'linear-gradient(to right, #11998e, #38ef7d)' : 'linear-gradient(to right, #FFC107, #FF9800)' }}
                         ></div>
                         <span>{stat.percentage}%</span>
                       </div>
@@ -137,7 +143,6 @@ function App() {
             </table>
           </div>
         </div>
-        <hr />
 
         <h3>📅 Registro Diario</h3>
         <div className="table-responsive">
@@ -152,9 +157,9 @@ function App() {
             </thead>
             <tbody>
               {report.map(log => (
-                <tr key={log._id} className={log.status}>
+                <tr key={log._id}>
                   <td>
-                    {log.status === 'completada' ? '✅ LISTO' : '⏳ PENDIENTE'}
+                    {log.status === 'completada' ? <span style={{ color: 'green' }}>✅ LISTO</span> : <span style={{ color: 'orange' }}>⏳ PENDIENTE</span>}
                   </td>
                   <td className="time-cell">
                     {log.status === 'completada' ? formatDate(log.completedAt) : '-'}
@@ -173,24 +178,24 @@ function App() {
   // --- VISTA 3: TAREAS DEL EMPLEADO ---
   return (
     <div className="container">
-      <div className="header">
+      <div className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h2>Hola, {currentUser.name} 👋</h2>
-        <button onClick={() => setView('login')} className="back-btn">Salir</button>
+        <button onClick={() => setView('login')} className="back-btn">⬅ Salir</button>
       </div>
 
-      <h3>Tus pendientes hoy:</h3>
+      <h3 style={{ textAlign: 'left' }}>Tus pendientes hoy:</h3>
       <div className="task-list">
-        {tasks.length === 0 && <p className="empty">¡Todo limpio! 🎉</p>}
+        {tasks.length === 0 && <div className="empty">¡Todo limpio! 🎉 <br /><small>Has terminado todo por hoy</small></div>}
 
         {tasks.map(assign => (
           <div key={assign._id} className={`card ${assign.status}`}>
             <div className="card-info">
               <h4>{assign.task.title}</h4>
-              <small>{assign.status === 'completada' ? '✅ Completada' : '⏳ Pendiente'}</small>
+              <small>{assign.status === 'completada' ? '✅ Tarea Completada' : '⏳ Pendiente de realizar'}</small>
             </div>
             {assign.status === 'pendiente' && (
               <button onClick={() => completeTask(assign._id)} className="done-btn">
-                LISTO
+                LISTO ✨
               </button>
             )}
           </div>
