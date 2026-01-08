@@ -238,6 +238,16 @@ function App() {
         <br />
         <hr />
 
+        {/* SECCIÓN DE ASIGNACIÓN MANUAL */}
+        <ManualAssignment
+          users={users}
+          tasks={availableTasks}
+          adminPassword={adminPassword}
+        />
+
+        <br />
+        <hr />
+
         <h3>📅 Registro Diario</h3>
         <div className="table-responsive">
           <table className="report-table">
@@ -383,6 +393,62 @@ const EmployeeManagement = ({ users, adminPassword, refreshUsers, fetchStats }) 
             ))}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+};
+
+const ManualAssignment = ({ users, tasks, adminPassword }) => {
+  const [selectedUser, setSelectedUser] = useState('');
+  const [selectedTask, setSelectedTask] = useState('');
+  const [xpReward, setXpReward] = useState(50);
+
+  const assignTask = () => {
+    if (!selectedUser || !selectedTask) return alert("Selecciona empleado y tarea");
+
+    axios.post(`${API_URL}/assign`, {
+      userId: selectedUser,
+      taskId: selectedTask,
+      xp: xpReward
+    }, {
+      headers: { 'x-admin-password': adminPassword }
+    }).then(() => {
+      alert("✅ Tarea asignada correctamente");
+      setSelectedUser('');
+      setSelectedTask('');
+      setXpReward(50);
+    }).catch(err => alert("Error al asignar tarea"));
+  };
+
+  return (
+    <div className="management-section" style={{ marginTop: '20px', borderTop: '2px dashed #ccc', paddingTop: '20px' }}>
+      <h3>✨ Asignación Manual y Especial</h3>
+      <p style={{ marginBottom: '10px' }}>Asigna tareas específicas con recompensas personalizadas.</p>
+
+      <div className="management-form" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '10px' }}>
+        <select value={selectedUser} onChange={e => setSelectedUser(e.target.value)} style={{ padding: '10px', borderRadius: '8px' }}>
+          <option value="">Seleccionar Empleado...</option>
+          {users.map(u => <option key={u._id} value={u._id}>{u.name}</option>)}
+        </select>
+
+        <select value={selectedTask} onChange={e => setSelectedTask(e.target.value)} style={{ padding: '10px', borderRadius: '8px' }}>
+          <option value="">Seleccionar Tarea...</option>
+          {tasks.map(t => <option key={t._id} value={t._id}>{t.title}</option>)}
+        </select>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <label>XP Recompensa:</label>
+          <input
+            type="number"
+            value={xpReward}
+            onChange={e => setXpReward(Number(e.target.value))}
+            style={{ width: '100px' }}
+          />
+        </div>
+
+        <button onClick={assignTask} className="add-btn" style={{ background: 'linear-gradient(45deg, #FF512F, #DD2476)' }}>
+          ⭐ Asignar Tarea Especial
+        </button>
       </div>
     </div>
   );

@@ -23,7 +23,8 @@ const assignmentSchema = new mongoose.Schema({
     task: { type: mongoose.Schema.Types.ObjectId, ref: 'Task' },
     date: { type: Date, default: Date.now },
     status: { type: String, enum: ['pendiente', 'completada'], default: 'pendiente' },
-    completedAt: { type: Date } // <--- ¡ESTA ES LA LÍNEA QUE FALTABA!
+    completedAt: { type: Date },
+    xpReward: { type: Number, default: 50 } // Valor de XP personalizado
 });
 
 // Exportar

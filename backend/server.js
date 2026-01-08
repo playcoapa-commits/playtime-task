@@ -61,7 +61,7 @@ app.post('/complete/:id', async (req, res) => {
         // Lógica de Gamificación
         const user = await User.findById(assignment.user);
         if (user) {
-            user.xp += 50; // XP por tarea
+            user.xp += (assignment.xpReward || 50); // XP Personalizada o defecto 50
 
             // Insignias
             const badges = user.badges || [];
@@ -222,7 +222,31 @@ app.delete('/users/:id', async (req, res) => {
     }
 });
 
-// 5. Endpoint para forzar asignación (Manual)
+// 5. ASIGNACIÓN MANUAL DE TAREAS
+app.post('/assign', async (req, res) => {
+    const password = req.headers['x-admin-password'];
+    if (password !== ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Contraseña incorrecta' });
+    }
+    try {
+        const { userId, taskId, xp } = req.body;
+        if (!userId || !taskId) return res.status(400).json({ error: 'Faltan datos' });
+
+        const assignment = new Assignment({
+            user: userId,
+            task: taskId,
+            date: new Date(), // Asignada ahora mismo
+            xpReward: xp || 50 // XP que el usuario decida o 50 por defecto
+        });
+
+        await assignment.save();
+        res.json({ success: true, assignment });
+    } catch (err) {
+        res.status(500).json({ error: 'Error al asignar tarea' });
+    }
+});
+
+// 6. Endpoint para forzar asignación (Manual)
 app.post('/force-assign', async (req, res) => {
     await assignDailyTasks();
     res.send('Asignación forzada completada');
