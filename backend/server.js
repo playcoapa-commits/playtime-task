@@ -9,6 +9,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// -- RUTA HEALTH CHECK PARA QUE NO SE DUERMA ---
+app.get('/health', (req, res) => {
+    res.json({ status: 'alive', message: 'I am awake!' });
+});
+
 // Conexión a Mongo
 mongoose.connect('mongodb+srv://playcoapa:Coapa051@cluster0.gwa8ril.mongodb.net/?appName=Cluster0')
     .then(() => console.log('🔌 MongoDB Conectado'))
