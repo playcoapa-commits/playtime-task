@@ -226,6 +226,15 @@ function App() {
             </table>
           </div>
         </div>
+
+        {/* SECCIÓN DE GESTIÓN DE PERSONAL (CRUD) */}
+        <EmployeeManagement
+          users={users}
+          adminPassword={adminPassword}
+          refreshUsers={loadUsers}
+          fetchStats={() => fetchStats(adminPassword)}
+        />
+
         <br />
         <hr />
 
@@ -312,5 +321,71 @@ function App() {
     </div>
   );
 }
+
+const EmployeeManagement = ({ users, adminPassword, refreshUsers, fetchStats }) => {
+  const [newUserName, setNewUserName] = useState('');
+
+  const addUser = () => {
+    if (!newUserName.trim()) return;
+    axios.post(`${API_URL}/users`, { name: newUserName }, {
+      headers: { 'x-admin-password': adminPassword }
+    }).then(() => {
+      setNewUserName('');
+      refreshUsers();
+      fetchStats();
+    }).catch(err => alert("Error al agregar usuario"));
+  };
+
+  const deleteUser = (id) => {
+    if (!confirm('¿Seguro que deseas despedir a este empleado? Se borrará su historial.')) return;
+    axios.delete(`${API_URL}/users/${id}`, {
+      headers: { 'x-admin-password': adminPassword }
+    }).then(() => {
+      refreshUsers();
+      fetchStats();
+    }).catch(err => alert("Error al eliminar usuario"));
+  };
+
+  return (
+    <div className="management-section" style={{ marginTop: '20px' }}>
+      <h3>👥 Gestión de Personal</h3>
+
+      <div className="management-form">
+        <input
+          type="text"
+          placeholder="Nuevo empleado..."
+          value={newUserName}
+          onChange={(e) => setNewUserName(e.target.value)}
+        />
+        <button onClick={addUser} className="add-btn" style={{ background: '#673AB7' }}>Contratar</button>
+      </div>
+
+      <div className="table-responsive">
+        <table className="report-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Nivel/XP</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map(u => (
+              <tr key={u._id}>
+                <td>{u.name}</td>
+                <td>Nivel {Math.floor((u.xp || 0) / 1000) + 1} ({u.xp || 0} XP)</td>
+                <td>
+                  <button onClick={() => deleteUser(u._id)} className="delete-btn" title="Despedir">
+                    ✕
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
 
 export default App;

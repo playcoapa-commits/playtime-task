@@ -189,6 +189,39 @@ app.delete('/tasks/:id', async (req, res) => {
     }
 });
 
+// 4.3. GESTIÓN DE EMPLEADOS (CRUD)
+app.post('/users', async (req, res) => {
+    const password = req.headers['x-admin-password'];
+    if (password !== ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Contraseña incorrecta' });
+    }
+    try {
+        const { name } = req.body;
+        if (!name) return res.status(400).json({ error: 'Nombre requerido' });
+
+        const newUser = new User({ name, role: 'general' });
+        await newUser.save();
+        res.json(newUser);
+    } catch (err) {
+        res.status(500).json({ error: 'Error al crear usuario' });
+    }
+});
+
+app.delete('/users/:id', async (req, res) => {
+    const password = req.headers['x-admin-password'];
+    if (password !== ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Contraseña incorrecta' });
+    }
+    try {
+        await User.findByIdAndDelete(req.params.id);
+        // Opcional: Borrar asignaciones del usuario eliminado
+        await Assignment.deleteMany({ user: req.params.id });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Error al eliminar usuario' });
+    }
+});
+
 // 5. Endpoint para forzar asignación (Manual)
 app.post('/force-assign', async (req, res) => {
     await assignDailyTasks();
