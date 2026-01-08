@@ -61,8 +61,15 @@ app.post('/complete/:id', async (req, res) => {
     }
 });
 
-// 4. NUEVO: REPORTE GERENCIAL (DASHBOARD)
+const ADMIN_PASSWORD = 'admin123';
+
+// 4. NUEVO: REPORTE GERENCIAL (DASHBOARD) - CON PASSWORD
 app.get('/dashboard', async (req, res) => {
+    const password = req.headers['x-admin-password'];
+    if (password !== ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Contraseña incorrecta' });
+    }
+
     try {
         const logs = await Assignment.find()
             .populate('user')
@@ -72,6 +79,40 @@ app.get('/dashboard', async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error en el reporte' });
+    }
+});
+
+// 4.1. NUEVO: ESTADÍSTICAS DE RENDIMIENTO
+app.get('/stats', async (req, res) => {
+    const password = req.headers['x-admin-password'];
+    if (password !== ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Contraseña incorrecta' });
+    }
+
+    try {
+        const users = await User.find({ active: true });
+        const stats = [];
+
+        for (const user of users) {
+            const total = await Assignment.countDocuments({ user: user._id });
+            const completed = await Assignment.countDocuments({ user: user._id, status: 'completada' });
+            const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+            stats.push({
+                name: user.name,
+                total,
+                completed,
+                percentage
+            });
+        }
+
+        // Ordenar por mejor porcentaje
+        stats.sort((a, b) => b.percentage - a.percentage);
+
+        res.json(stats);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error obteniendo estadísticas' });
     }
 });
 
