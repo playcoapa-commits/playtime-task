@@ -48,17 +48,41 @@ app.get('/my-tasks/:userId', async (req, res) => {
     }
 });
 
-// 4. COMPLETAR TAREA (Gamificación)
+// 4. COMPLETAR TAREA (Paso 1: En Revisión)
 app.post('/complete/:id', async (req, res) => {
     try {
         const assignment = await Assignment.findById(req.params.id);
         if (!assignment) return res.status(404).json({ error: 'Asignación no encontrada' });
 
-        assignment.status = 'completada';
+        assignment.status = 'revision';
         assignment.completedAt = new Date();
         await assignment.save();
 
-        // Lógica de Gamificación
+        res.json({ success: true, status: 'revision', message: 'Tarea enviada a revisión' });
+    } catch (err) {
+        res.status(500).json({ error: 'Error al completar tarea' });
+    }
+});
+
+// 4.1 APROBAR TAREA (Paso 2: Confirmar y dar XP)
+app.post('/approve/:id', async (req, res) => {
+    const password = req.headers['x-admin-password'];
+    if (password !== ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Contraseña incorrecta' });
+    }
+
+    try {
+        const assignment = await Assignment.findById(req.params.id);
+        if (!assignment) return res.status(404).json({ error: 'Asignación no encontrada' });
+
+        if (assignment.status === 'completada') {
+            return res.json({ success: true, message: 'Ya estaba completada' });
+        }
+
+        assignment.status = 'completada';
+        await assignment.save();
+
+        // Lógica de Gamificación (XP)
         const user = await User.findById(assignment.user);
         if (user) {
             user.xp += (assignment.xpReward || 50); // XP Personalizada o defecto 50

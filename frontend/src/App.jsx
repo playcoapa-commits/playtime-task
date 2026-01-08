@@ -94,24 +94,25 @@ function App() {
 
   const completeTask = (id) => {
     axios.post(`${API_URL}/complete/${id}`).then((res) => {
-      // Actualizar usuario local con nueva XP y medallas
-      if (res.data.success && currentUser) {
-        setCurrentUser(prev => ({
-          ...prev,
-          xp: res.data.xp,
-          badges: res.data.allBadges
-        }));
-
-        // Si ganó una nueva insignia, mostramos alerta especial
-        if (res.data.newBadges && res.data.newBadges.length > 0) {
-          alert(`🎉 ¡FELICIDADES! Has desbloqueado: ${res.data.newBadges.join(', ')}`);
-          confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
-        } else {
-          // Confeti normal por completar tarea
-          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-        }
+      if (res.data.success) {
+        alert("✅ Tarea enviada a revisión. ¡Buen trabajo!");
       }
       loadTasks(currentUser._id);
+    });
+  };
+
+  const approveTask = (id, e) => {
+    e.stopPropagation(); // Evitar recargas si está en un form
+    axios.post(`${API_URL}/approve/${id}`, {}, {
+      headers: { 'x-admin-password': adminPassword }
+    }).then((res) => {
+      if (res.data.success) {
+        alert("✅ Tarea Aprobada. Se han enviado los XP al empleado.");
+
+        // Recargar reporte y stats
+        axios.get(`${API_URL}/dashboard`, { headers: { 'x-admin-password': adminPassword } }).then(r => setReport(r.data));
+        fetchStats(adminPassword);
+      }
     });
   };
 
@@ -261,12 +262,24 @@ function App() {
             </thead>
             <tbody>
               {report.map(log => (
-                <tr key={log._id}>
+                <tr key={log._id} style={{ backgroundColor: log.status === 'revision' ? '#fff3cd' : 'transparent' }}>
                   <td>
-                    {log.status === 'completada' ? <span style={{ color: 'green' }}>✅ LISTO</span> : <span style={{ color: 'orange' }}>⏳ PENDIENTE</span>}
+                    {log.status === 'completada' && <span style={{ color: 'green', fontWeight: 'bold' }}>✅ LISTO</span>}
+                    {log.status === 'pendiente' && <span style={{ color: 'orange' }}>⏳ POR HACER</span>}
+                    {log.status === 'revision' && (
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ color: '#d39e00', fontWeight: 'bold' }}>🕵️ REVISIÓN</span>
+                        <button
+                          style={{ fontSize: '0.8rem', padding: '5px', marginTop: '5px', background: 'green' }}
+                          onClick={(e) => approveTask(log._id, e)}
+                        >
+                          ✅ Aprobar
+                        </button>
+                      </div>
+                    )}
                   </td>
                   <td className="time-cell">
-                    {log.status === 'completada' ? formatDate(log.completedAt) : '-'}
+                    {log.completedAt ? formatDate(log.completedAt) : '-'}
                   </td>
                   <td><strong>{log.user?.name || 'Desconocido'}</strong></td>
                   <td>{log.task?.title || 'Tarea borrada'}</td>
@@ -315,14 +328,23 @@ function App() {
         {tasks.length === 0 && <div className="empty">¡Todo limpio! 🎉 <br /><small>Has terminado todo por hoy</small></div>}
 
         {tasks.map(assign => (
-          <div key={assign._id} className={`card ${assign.status}`}>
+          <div key={assign._id} className={`card ${assign.status}`} style={{ opacity: assign.status === 'revision' ? 0.7 : 1 }}>
             <div className="card-info">
               <h4>{assign.task.title}</h4>
-              <small>{assign.status === 'completada' ? '✅ Tarea Completada' : '⏳ Pendiente de realizar (+50 XP)'}</small>
+              <small>
+                {assign.status === 'completada' && '✅ Completada (+XP)'}
+                {assign.status === 'revision' && '🕵️ Pendiente de Revisión'}
+                {assign.status === 'pendiente' && '⏳ Pendiente (+ XP)'}
+              </small>
             </div>
             {assign.status === 'pendiente' && (
               <button onClick={() => completeTask(assign._id)} className="done-btn">
                 LISTO ✨
+              </button>
+            )}
+            {assign.status === 'revision' && (
+              <button disabled className="done-btn" style={{ background: '#ccc', cursor: 'not-allowed' }}>
+                ⏳ En Revisión
               </button>
             )}
           </div>
