@@ -116,6 +116,48 @@ app.get('/stats', async (req, res) => {
     }
 });
 
+// 4.2. GESTIÓN DE TAREAS (CRUD)
+app.get('/tasks', async (req, res) => {
+    const password = req.headers['x-admin-password'];
+    if (password !== ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Contraseña incorrecta' });
+    }
+    try {
+        const tasks = await Task.find({});
+        res.json(tasks);
+    } catch (err) {
+        res.status(500).json({ error: 'Error al obtener tareas' });
+    }
+});
+
+app.post('/tasks', async (req, res) => {
+    const password = req.headers['x-admin-password'];
+    if (password !== ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Contraseña incorrecta' });
+    }
+    try {
+        const { title, description } = req.body;
+        const newTask = new Task({ title, description });
+        await newTask.save();
+        res.json(newTask);
+    } catch (err) {
+        res.status(500).json({ error: 'Error al crear tarea' });
+    }
+});
+
+app.delete('/tasks/:id', async (req, res) => {
+    const password = req.headers['x-admin-password'];
+    if (password !== ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Contraseña incorrecta' });
+    }
+    try {
+        await Task.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Error al eliminar tarea' });
+    }
+});
+
 // 5. Endpoint para forzar asignación (Manual)
 app.post('/force-assign', async (req, res) => {
     await assignDailyTasks();

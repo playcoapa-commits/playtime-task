@@ -10,11 +10,15 @@ function App() {
   const [view, setView] = useState('login'); // 'login', 'tasks', 'admin'
   const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
-  const [tasks, setTasks] = useState([]);
+  const [tasks, setTasks] = useState([]); // Tareas asignadas al usuario
   const [report, setReport] = useState([]); // Datos para el panel de control
 
   const [stats, setStats] = useState([]); // Nuevo estado para estadísticas
   const [adminPassword, setAdminPassword] = useState(''); // Estado para guardar el password temporalmente
+
+  // Estado para gestión de tareas (CRUD)
+  const [availableTasks, setAvailableTasks] = useState([]);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
 
   useEffect(() => {
     loadUsers();
@@ -33,8 +37,9 @@ function App() {
     })
       .then(res => {
         setReport(res.data);
-        setAdminPassword(password); // Guardamos el password para futuras peticiones (stats)
-        fetchStats(password); // Cargamos stats también
+        setAdminPassword(password);
+        fetchStats(password);
+        fetchAvailableTasks(password); // Cargamos las tareas disponibles
         setView('admin');
       })
       .catch(err => {
@@ -50,6 +55,31 @@ function App() {
     axios.get(`${API_URL}/stats`, {
       headers: { 'x-admin-password': password }
     }).then(res => setStats(res.data));
+  };
+
+  const fetchAvailableTasks = (password) => {
+    axios.get(`${API_URL}/tasks`, {
+      headers: { 'x-admin-password': password }
+    }).then(res => setAvailableTasks(res.data));
+  };
+
+  const addTask = () => {
+    if (!newTaskTitle.trim()) return;
+    axios.post(`${API_URL}/tasks`, { title: newTaskTitle }, {
+      headers: { 'x-admin-password': adminPassword }
+    }).then(() => {
+      setNewTaskTitle('');
+      fetchAvailableTasks(adminPassword);
+    });
+  };
+
+  const deleteTask = (id) => {
+    if (!confirm('¿Seguro que deseas eliminar esta tarea?')) return;
+    axios.delete(`${API_URL}/tasks/${id}`, {
+      headers: { 'x-admin-password': adminPassword }
+    }).then(() => {
+      fetchAvailableTasks(adminPassword);
+    });
   };
 
   const login = (user) => {
@@ -109,7 +139,7 @@ function App() {
           <button onClick={() => setView('login')} className="back-btn">⬅ Salir</button>
         </div>
 
-        {/* NUEVA SECCIÓN DE ESTADÍSTICAS */}
+        {/* SECCIÓN DE ESTADÍSTICAS */}
         <div className="stats-section">
           <h3>🏆 Rendimiento de Empleados</h3>
           <div className="table-responsive">
@@ -143,6 +173,46 @@ function App() {
             </table>
           </div>
         </div>
+
+        {/* SECCIÓN DE GESTIÓN DE TAREAS (CRUD) */}
+        <div className="management-section">
+          <h3>🛠️ Gestión de Tareas</h3>
+
+          <div className="management-form">
+            <input
+              type="text"
+              placeholder="Nueva tarea..."
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+            />
+            <button onClick={addTask} className="add-btn">Agregar Tarea</button>
+          </div>
+
+          <div className="table-responsive">
+            <table className="report-table">
+              <thead>
+                <tr>
+                  <th>Tarea</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {availableTasks.map(task => (
+                  <tr key={task._id}>
+                    <td>{task.title}</td>
+                    <td>
+                      <button onClick={() => deleteTask(task._id)} className="delete-btn" title="Eliminar">
+                        ✕
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <br />
+        <hr />
 
         <h3>📅 Registro Diario</h3>
         <div className="table-responsive">
