@@ -12,6 +12,9 @@ function App() {
   const [tasks, setTasks] = useState([]);
   const [report, setReport] = useState([]); // Datos para el panel de control
 
+  const [stats, setStats] = useState([]); // Nuevo estado para estadísticas
+  const [adminPassword, setAdminPassword] = useState(''); // Estado para guardar el password temporalmente
+
   useEffect(() => {
     loadUsers();
   }, []);
@@ -21,10 +24,31 @@ function App() {
   };
 
   const enterAdminMode = () => {
-    axios.get(`${API_URL}/dashboard`).then(res => {
-      setReport(res.data);
-      setView('admin');
-    });
+    const password = prompt("Ingrese contraseña de Administrador:");
+    if (!password) return;
+
+    axios.get(`${API_URL}/dashboard`, {
+      headers: { 'x-admin-password': password }
+    })
+      .then(res => {
+        setReport(res.data);
+        setAdminPassword(password); // Guardamos el password para futuras peticiones (stats)
+        fetchStats(password); // Cargamos stats también
+        setView('admin');
+      })
+      .catch(err => {
+        if (err.response && err.response.status === 401) {
+          alert("⛔ ACCESO DENEGADO: Contraseña incorrecta");
+        } else {
+          alert("Error al conectar con el servidor");
+        }
+      });
+  };
+
+  const fetchStats = (password) => {
+    axios.get(`${API_URL}/stats`, {
+      headers: { 'x-admin-password': password }
+    }).then(res => setStats(res.data));
   };
 
   const login = (user) => {
@@ -79,6 +103,43 @@ function App() {
           <button onClick={() => setView('login')} className="back-btn">Salir</button>
         </div>
 
+        {/* NUEVA SECCIÓN DE ESTADÍSTICAS */}
+        <div className="stats-section">
+          <h3>🏆 Rendimiento de Empleados</h3>
+          <div className="table-responsive">
+            <table className="report-table stats-table">
+              <thead>
+                <tr>
+                  <th>Empleado</th>
+                  <th>Tareas Totales</th>
+                  <th>Completadas</th>
+                  <th>Efectividad</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stats.map((stat, idx) => (
+                  <tr key={idx}>
+                    <td>{stat.name}</td>
+                    <td>{stat.total}</td>
+                    <td>{stat.completed}</td>
+                    <td>
+                      <div className="progress-bar-container">
+                        <div
+                          className="progress-bar"
+                          style={{ width: `${stat.percentage}%`, backgroundColor: stat.percentage >= 80 ? '#4CAF50' : '#FFC107' }}
+                        ></div>
+                        <span>{stat.percentage}%</span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <hr />
+
+        <h3>📅 Registro Diario</h3>
         <div className="table-responsive">
           <table className="report-table">
             <thead>

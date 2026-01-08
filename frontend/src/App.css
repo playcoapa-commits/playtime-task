@@ -1,56 +1,138 @@
-#root {
-  max-width: 1280px;
+body {
+  font-family: sans-serif;
+  background-color: #f0f2f5;
+  margin: 0;
+  padding: 20px;
+}
+
+.container {
+  max-width: 600px;
   margin: 0 auto;
-  padding: 2rem;
+}
+
+h1,
+h2 {
   text-align: center;
+  color: #333;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.user-grid {
+  display: grid;
+  gap: 15px;
+  grid-template-columns: 1fr 1fr;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.user-btn {
+  padding: 20px;
+  font-size: 18px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.back-btn {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 5px 15px;
+  border-radius: 5px;
+}
+
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .card {
-  padding: 2em;
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.read-the-docs {
-  color: #888;
+.card.completada {
+  background: #d4edda;
+  opacity: 0.7;
 }
 
-/* ... (manten lo anterior) ... */
+.done-btn {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-weight: bold;
+}
 
-/* Estilos Modo Admin */
-.admin-link { background: none; border: none; color: #576574; text-decoration: underline; cursor: pointer; display: block; margin: 20px auto; }
-.admin-container { max-width: 800px; } /* Más ancho para ver la tabla */
+/* Stats Styles */
+.stats-section {
+  margin-bottom: 2rem;
+  background-color: white;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
 
-.table-responsive { overflow-x: auto; }
-.report-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-.report-table th, .report-table td { padding: 12px; text-align: left; border-bottom: 1px solid #dfe4ea; }
-.report-table th { background-color: #f1f2f6; color: #576574; }
-.report-table tr.completada { background-color: #dffff0; }
-.report-table tr.pendiente { background-color: #fff; }
-.time-cell { font-family: monospace; color: #2f3542; }
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.stats-table th,
+.stats-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.stats-table td {
+  vertical-align: middle;
+}
+
+.progress-bar-container {
+  background-color: #e0e0e0;
+  border-radius: 10px;
+  height: 20px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.5s ease;
+}
+
+.progress-bar-container span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: #333;
+}
+
+/* Responsive Table Adjustments */
+@media (max-width: 600px) {
+
+  .stats-table th,
+  .stats-table td {
+    padding: 0.5rem;
+    font-size: 0.9rem;
+  }
+}
