@@ -13,16 +13,17 @@ const seedDatabase = async () => {
     await User.deleteMany({});
     await Task.deleteMany({});
 
-    // 2. Crear Usuarios con Días de Descanso (0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb)
+    // 2. Crear Usuarios con Días de Descanso y TURNOS
     const users = await User.insertMany([
-      { name: 'Sara', restDays: [1] }, // Descansa Lunes
-      { name: 'Sebastian', restDays: [1] }, // Descansa Lunes
-      { name: 'Danae', restDays: [2] }, // Descansa Martes
-      { name: 'Adjani', restDays: [4] }, // Descansa Jueves
-      { name: 'Frida', restDays: [4] }, // Descansa Jueves
-      { name: 'Leo', restDays: [4] }, // Descansa Jueves
-      // Podríamos agregar un "Extra" para cubrir
-      { name: 'Gerente', restDays: [0] }
+      { name: 'Sara', restDays: [1], shift: 'matutino' },      // 🌅 Mañana
+      { name: 'Sebastian', restDays: [1], shift: 'matutino' }, // 🌅 Mañana
+      { name: 'Danae', restDays: [2], shift: 'matutino' },     // 🌅 Mañana
+
+      { name: 'Adjani', restDays: [4], shift: 'vespertino' },  // 🌙 Tarde
+      { name: 'Frida', restDays: [4], shift: 'vespertino' },   // 🌙 Tarde
+      { name: 'Leo', restDays: [4], shift: 'vespertino' },     // 🌙 Tarde
+
+      { name: 'Gerente', restDays: [0], shift: 'completo' }    // 🌟 Comodín (sale en ambos filtros si hacemos lógica para 'completo', o se adapta)
     ]);
 
     // 3. Crear Tareas

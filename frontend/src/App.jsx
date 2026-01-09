@@ -431,6 +431,7 @@ const EmployeeManagement = ({ users, adminPassword, refreshUsers, fetchStats }) 
           <thead>
             <tr>
               <th>Nombre</th>
+              <th>Turno</th>
               <th>Nivel/XP</th>
               <th>Acciones</th>
             </tr>
@@ -439,6 +440,7 @@ const EmployeeManagement = ({ users, adminPassword, refreshUsers, fetchStats }) 
             {users.map(u => (
               <tr key={u._id}>
                 <td>{u.name}</td>
+                <td><small>{u.shift || 'N/A'}</small></td>
                 <td>Nivel {Math.floor((u.xp || 0) / 1000) + 1} ({u.xp || 0} XP)</td>
                 <td>
                   <button onClick={() => deleteUser(u._id)} className="delete-btn" title="Despedir">

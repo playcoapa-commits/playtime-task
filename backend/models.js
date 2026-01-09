@@ -7,7 +7,8 @@ const userSchema = new mongoose.Schema({
     active: { type: Boolean, default: true },
     xp: { type: Number, default: 0 },
     badges: { type: [String], default: ['🌱 Novato'] },
-    restDays: { type: [Number], default: [] } // 0=Domingo, 1=Lunes, etc.
+    restDays: { type: [Number], default: [] }, // 0=Domingo, 1=Lunes, etc.
+    shift: { type: String, enum: ['matutino', 'vespertino', 'completo'], default: 'matutino' } // Nuevo campo
 });
 
 // 2. Esquema de Tarea
