@@ -8,23 +8,34 @@ const seedDatabase = async () => {
     await mongoose.connect(MONGO_URI);
     console.log('🌱 Conectando...');
 
-    // Limpiar BD
+    // 1. Limpiar BD
     await Assignment.deleteMany({});
     await User.deleteMany({});
     await Task.deleteMany({});
 
-    // 1. Tus Empleados
+    // 2. Crear Usuarios con Días de Descanso (0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb)
     const users = await User.insertMany([
-      { name: 'Sara', role: 'general' },
-      { name: 'Leo', role: 'general' },
-      { name: 'Adjani', role: 'general' },
-      { name: 'Sebastian', role: 'general' },
-      { name: 'Frida', role: 'general' },
-      { name: 'Dana', role: 'general' }
+      { name: 'Sara', restDays: [1] }, // Descansa Lunes
+      { name: 'Sebastian', restDays: [1] }, // Descansa Lunes
+      { name: 'Danae', restDays: [2] }, // Descansa Martes
+      { name: 'Adjani', restDays: [4] }, // Descansa Jueves
+      { name: 'Frida', restDays: [4] }, // Descansa Jueves
+      { name: 'Leo', restDays: [4] }, // Descansa Jueves
+      // Podríamos agregar un "Extra" para cubrir
+      { name: 'Gerente', restDays: [0] }
     ]);
 
-    // 2. Tus Máquinas
-    const machines = [
+    // 3. Crear Tareas
+    // ROLES (Diarios - type: 'role')
+    const roles = [
+      { title: 'Caja Principal', type: 'role', xpReward: 100 },
+      { title: 'Canje de Premios', type: 'role', xpReward: 100 },
+      { title: 'Area Infantil', type: 'role', xpReward: 120 }
+    ];
+
+    // LIMPIEZA (Semanales - type: 'cleaning')
+    // Usamos la lista de máquinas que ya tenías, pero ahora marcadas como 'cleaning'
+    const machinesNames = [
       "Air FX B", "Angry Birds", "Area Inf 30 Min", "Bean Bag Toss B", "Big Bass B",
       "Billar (A)", "Boxer Combo", "Carrusel Peppa Pig", "Chocolate Factory",
       "Coconut Bash A", "Coconut Bash B", "Crazy Cans", "Cruisn Blast A", "Cruisn Blast B",
@@ -44,14 +55,20 @@ const seedDatabase = async () => {
       "Zombie Snatcher A"
     ];
 
-    const tasks = machines.map(m => ({
+    const cleaningTasks = machinesNames.map(m => ({
       title: `Limpiar: ${m}`,
-      description: `Limpieza y desinfección de ${m}`,
-      requiredRole: null
+      type: 'cleaning',
+      xpReward: 50,
+      frequency: 'semanal'
     }));
 
-    await Task.insertMany(tasks);
-    console.log(`✅ Base de datos lista: 6 empleados y ${machines.length} máquinas.`);
+    await Task.insertMany([...roles, ...cleaningTasks]);
+
+    console.log(`✅ Base de datos REINICIADA:`);
+    console.log(`- ${users.length} Empleados (Con descansos asignados)`);
+    console.log(`- ${roles.length} Roles diarios`);
+    console.log(`- ${cleaningTasks.length} Tareas de limpieza semanal`);
+
     process.exit(0);
   } catch (e) { console.error(e); }
 };
