@@ -153,7 +153,15 @@ function App() {
   if (view === 'login') {
     return (
       <div className="container">
-        <h1>🧸 Play Time Tareas</h1>
+        <div className="brand-header">
+          <img
+            src="https://playtime.lat/wp-content/themes/playtimewp/app/img/playtime.svg"
+            alt="Playtime Logo"
+            className="logo-main"
+          />
+          <div className="branch-tag">📍 Sucursal Coapa</div>
+        </div>
+        <h1>Tareas Operativas</h1>
         <div className="user-grid">
           {users.map(u => (
             <button key={u._id} onClick={() => login(u)} className="user-btn">
