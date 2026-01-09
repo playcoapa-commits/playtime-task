@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -15,7 +16,7 @@ app.get('/health', (req, res) => {
 });
 
 // Conexión a Mongo
-mongoose.connect('mongodb+srv://playcoapa:Coapa051@cluster0.gwa8ril.mongodb.net/?appName=Cluster0')
+mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('🔌 MongoDB Conectado'))
     .catch(err => console.error('Error Mongo:', err));
 

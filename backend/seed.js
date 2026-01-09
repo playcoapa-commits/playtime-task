@@ -1,7 +1,11 @@
 const mongoose = require('mongoose');
 const { User, Task, Assignment } = require('./models');
 
-const MONGO_URI = 'mongodb+srv://playcoapa:Coapa051@cluster0.gwa8ril.mongodb.net/?appName=Cluster0';
+require('dotenv').config();
+const mongoose = require('mongoose');
+const { User, Task, Assignment } = require('./models');
+
+const MONGO_URI = process.env.MONGO_URI;
 
 const seedDatabase = async () => {
   try {
