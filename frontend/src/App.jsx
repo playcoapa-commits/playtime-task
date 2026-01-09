@@ -116,6 +116,29 @@ function App() {
     });
   };
 
+  const delegateTask = (assignmentId) => {
+    const name = prompt("Escribe el NOMBRE EXACTO del empleado a quien delegar:");
+    if (!name) return;
+
+    // Buscar usuario por nombre (case insensitive)
+    const targetUser = users.find(u => u.name.toLowerCase() === name.toLowerCase().trim());
+    if (!targetUser) {
+      alert("❌ Usuario no encontrado. Verifica el nombre.");
+      return;
+    }
+
+    if (confirm(`¿Reasignar esta tarea a ${targetUser.name}?`)) {
+      axios.put(`${API_URL}/assignments/${assignmentId}/delegate`, { newUserId: targetUser._id }, {
+        headers: { 'x-admin-password': adminPassword }
+      }).then(() => {
+        alert("✅ Tarea reasignada correctamente.");
+        axios.get(`${API_URL}/dashboard`, { headers: { 'x-admin-password': adminPassword } }).then(r => setReport(r.data));
+      }).catch(err => {
+        alert("Error al delegar tarea.");
+      });
+    }
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     const date = new Date(dateString);
