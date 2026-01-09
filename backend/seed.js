@@ -1,9 +1,7 @@
 const mongoose = require('mongoose');
 const { User, Task, Assignment } = require('./models');
 
-require('dotenv').config();
-const mongoose = require('mongoose');
-const { User, Task, Assignment } = require('./models');
+require('dotenv').config({ path: '../.env' });
 
 const MONGO_URI = process.env.MONGO_URI;
 
@@ -17,29 +15,53 @@ const seedDatabase = async () => {
     await User.deleteMany({});
     await Task.deleteMany({});
 
-    // 2. Crear Usuarios con Días de Descanso y TURNOS
+    // 2. Crear Usuarios con Schedules
+    // 0=Dom, 1=Lun, 2=Mar, 3=Mie, 4=Jue, 5=Vie, 6=Sab
+    // Helper para crear array de 7 días
+    const fill = (val) => Array(7).fill(val);
+
+    // Sara: Matutino Lunes a Domingo
+    const scheduleSara = fill('matutino');
+
+    // Sebastian: Vespertino Lunes a Domingo
+    const scheduleSebastian = fill('vespertino');
+
+    // Frida y Leo: Matutino (L-V), Vespertino (S-D)
+    // Indexes: 1,2,3,4,5 = Matutino. 0,6 = Vespertino
+    const scheduleMixed1 = ['vespertino', 'matutino', 'matutino', 'matutino', 'matutino', 'matutino', 'vespertino'];
+
+    // Adjani: Vespertino Lunes a Domingo
+    const scheduleAdjani = fill('vespertino');
+
+    // Danae: Vespertino (L-V), Matutino (S-D)
+    const scheduleMixed2 = ['matutino', 'vespertino', 'vespertino', 'vespertino', 'vespertino', 'vespertino', 'matutino'];
+
     const users = await User.insertMany([
-      { name: 'Sara', restDays: [1], shift: 'matutino' },      // 🌅 Mañana
-      { name: 'Sebastian', restDays: [1], shift: 'matutino' }, // 🌅 Mañana
-      { name: 'Danae', restDays: [2], shift: 'matutino' },     // 🌅 Mañana
-
-      { name: 'Adjani', restDays: [4], shift: 'vespertino' },  // 🌙 Tarde
-      { name: 'Frida', restDays: [4], shift: 'vespertino' },   // 🌙 Tarde
-      { name: 'Leo', restDays: [4], shift: 'vespertino' },     // 🌙 Tarde
-
-      { name: 'Gerente', restDays: [0], shift: 'completo' }    // 🌟 Comodín (sale en ambos filtros si hacemos lógica para 'completo', o se adapta)
+      { name: 'Sara', weeklySchedule: scheduleSara },
+      { name: 'Sebastian', weeklySchedule: scheduleSebastian },
+      { name: 'Danae', weeklySchedule: scheduleMixed2 },
+      { name: 'Adjani', weeklySchedule: scheduleAdjani },
+      { name: 'Frida', weeklySchedule: scheduleMixed1 },
+      { name: 'Leo', weeklySchedule: scheduleMixed1 },
     ]);
 
     // 3. Crear Tareas
     // ROLES (Diarios - type: 'role')
-    const roles = [
-      { title: 'Caja Principal', type: 'role', xpReward: 100 },
-      { title: 'Canje de Premios', type: 'role', xpReward: 100 },
-      { title: 'Area Infantil', type: 'role', xpReward: 120 }
+    // Se duplican para cubrir AM y PM
+    const rolesConfig = [
+      { title: 'Caja Principal', xp: 100 },
+      { title: 'Canje de Premios', xp: 100 },
+      { title: 'Area Infantil', xp: 120 }
     ];
 
+    const roles = [];
+    rolesConfig.forEach(r => {
+      roles.push({ title: `${r.title} (Matutino)`, type: 'role', shift: 'matutino', xpReward: r.xp });
+      roles.push({ title: `${r.title} (Vespertino)`, type: 'role', shift: 'vespertino', xpReward: r.xp });
+    });
+
     // LIMPIEZA (Semanales - type: 'cleaning')
-    // Usamos la lista de máquinas que ya tenías, pero ahora marcadas como 'cleaning'
+    // Las máquinas son 'general', cualquiera puede limpiarlas si se le asigna (o adaptaremos la lógica)
     const machinesNames = [
       "Air FX B", "Angry Birds", "Area Inf 30 Min", "Bean Bag Toss B", "Big Bass B",
       "Billar (A)", "Boxer Combo", "Carrusel Peppa Pig", "Chocolate Factory",
@@ -63,6 +85,7 @@ const seedDatabase = async () => {
     const cleaningTasks = machinesNames.map(m => ({
       title: `Limpiar: ${m}`,
       type: 'cleaning',
+      shift: 'general',
       xpReward: 50,
       frequency: 'semanal'
     }));
@@ -70,8 +93,8 @@ const seedDatabase = async () => {
     await Task.insertMany([...roles, ...cleaningTasks]);
 
     console.log(`✅ Base de datos REINICIADA:`);
-    console.log(`- ${users.length} Empleados (Con descansos asignados)`);
-    console.log(`- ${roles.length} Roles diarios`);
+    console.log(`- ${users.length} Empleados`);
+    console.log(`- ${roles.length} Roles diarios (${roles.length / 2} por turno)`);
     console.log(`- ${cleaningTasks.length} Tareas de limpieza semanal`);
 
     process.exit(0);

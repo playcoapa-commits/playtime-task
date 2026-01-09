@@ -4,7 +4,7 @@ const { User, Task, Assignment } = require('./models');
 const shuffle = (array) => array.sort(() => Math.random() - 0.5);
 
 async function assignDailyTasks() {
-    console.log('--- Iniciando reparto inteligente de tareas ---');
+    console.log('--- Iniciando reparto inteligente de tareas (Turnos) ---');
 
     const today = new Date();
     const dayOfWeek = today.getDay(); // 0=Domingo, 1=Lunes, ...
@@ -14,11 +14,9 @@ async function assignDailyTasks() {
     startOfDay.setHours(0, 0, 0, 0);
 
     // 1. Evitar duplicar roles de hoy
-    // Nota: Solo revisamos si ya se asignaron 'roles' hoy. Las de limpieza son aparte.
     const rolesAssigned = await Assignment.findOne({
         date: { $gte: startOfDay },
-        // Si quisiéramos ser estrictos, buscaríamos assignments que apuntan a tareas tipo 'role'
-        // Pero por simplicidad, si ya hay assignments hoy, asumimos que corrió el cron.
+        // Simple check: si ya hay assignments hoy, abortamos.
     });
 
     if (rolesAssigned) {
@@ -26,64 +24,77 @@ async function assignDailyTasks() {
         return;
     }
 
-    // 2. Obtener usuarios DISPONIBLES (No es su día de descanso)
+    // 2. Obtener usuarios ACTIVOS
     const users = await User.find({ active: true });
 
-    // Filtrar quienes descansan hoy
-    const availableUsers = users.filter(u => !u.restDays.includes(dayOfWeek));
+    // Filtrar por horario del día actual
+    // u.weeklySchedule[dayOfWeek] nos da: 'matutino', 'vespertino', 'descanso'
+    const workingUsers = users.filter(u => u.weeklySchedule[dayOfWeek] !== 'descanso');
 
-    console.log(`📅 Día: ${dayOfWeek}. Usuarios totales: ${users.length}. Disponibles: ${availableUsers.length}`);
+    console.log(`📅 Día: ${dayOfWeek}. Usuarios totales: ${users.length}. Trabajando hoy: ${workingUsers.length}`);
 
-    if (availableUsers.length === 0) { console.log('❌ Nadie trabaja hoy.'); return; }
+    if (workingUsers.length === 0) { console.log('❌ Nadie trabaja hoy.'); return; }
 
-    // 3. Obtener Tareas
-    const roleTasks = await Task.find({ type: 'role' });
-    const cleaningTasks = await Task.find({ type: 'cleaning' });
+    // Separar por turnos
+    const morningUsers = workingUsers.filter(u => u.weeklySchedule[dayOfWeek] === 'matutino');
+    const eveningUsers = workingUsers.filter(u => u.weeklySchedule[dayOfWeek] === 'vespertino');
+
+    console.log(`   🌅 Matutino: ${morningUsers.length} | 🌙 Vespertino: ${eveningUsers.length}`);
+
+    // 3. Obtener Tareas de ROL separadas por turno
+    const morningRoles = await Task.find({ type: 'role', shift: 'matutino' });
+    const eveningRoles = await Task.find({ type: 'role', shift: 'vespertino' });
 
     const assignments = [];
-    const shuffledUsers = shuffle(availableUsers);
 
-    // --- FASE 1: ASIGNAR ROLES DIARIOS (Caja, Canje, etc) ---
-    // Prioridad: Llenar puestos clave primero
-    roleTasks.forEach((task, index) => {
-        if (index < shuffledUsers.length) {
-            const user = shuffledUsers[index];
-            assignments.push({
-                user: user._id,
-                task: task._id,
-                date: new Date(),
-                deadline: new Date(new Date().setHours(23, 59, 59)), // Hoy
-                status: 'pendiente',
-                xpReward: task.xpReward || 100 // Más XP por roles
-            });
-        }
-    });
+    // --- FASE 1: ASIGNAR ROLES POR TURNO ---
+
+    const assignRoles = (staff, tasks) => {
+        const shuffledStaff = shuffle([...staff]);
+        tasks.forEach((task, index) => {
+            if (index < shuffledStaff.length) {
+                const user = shuffledStaff[index];
+                assignments.push({
+                    user: user._id,
+                    task: task._id,
+                    date: new Date(),
+                    deadline: new Date(new Date().setHours(23, 59, 59)),
+                    status: 'pendiente',
+                    xpReward: task.xpReward || 100
+                });
+            }
+        });
+    };
+
+    assignRoles(morningUsers, morningRoles);
+    assignRoles(eveningUsers, eveningRoles);
 
     // --- FASE 2: ASIGNAR LIMPIEZA DE MÁQUINAS (Solo LUNES - Semanal) ---
     if (dayOfWeek === 1) { // 1 = Lunes
         console.log('🧹 Es LUNES: Asignando limpieza semanal...');
+        const cleaningTasks = await Task.find({ type: 'cleaning' });
 
-        // Excluir a los que ya tienen Rol (si se desea) O darles doble tarea.
-        // Regla de Negocio: "Caja, Canje y Area Infantil... considerar descansos... asignación semanal" 
-        // Asumiremos que los que tienen rol NO reciben máquina, O que se reparten entre todos.
-        // Para balancear: Repartiremos las máquinas entre TODOS los disponibles de la semana (a la suerte).
+        // Repartir entre TODOS los que trabajan hoy (morning + evening)
+        const allStaff = shuffle([...workingUsers]);
 
-        const nextSunday = new Date();
-        nextSunday.setDate(today.getDate() + 6); // Próximo domingo
+        if (allStaff.length > 0) {
+            const nextSunday = new Date();
+            nextSunday.setDate(today.getDate() + 6); // Próximo domingo
+            nextSunday.setHours(23, 59, 59);
 
-        cleaningTasks.forEach((task, index) => {
-            // Rotar de nuevo usuarios para aleatoriedad
-            const user = shuffledUsers[index % shuffledUsers.length];
-
-            assignments.push({
-                user: user._id,
-                task: task._id,
-                date: new Date(),
-                deadline: nextSunday,
-                status: 'pendiente',
-                xpReward: task.xpReward || 50 // Menos XP por máquinas
+            cleaningTasks.forEach((task, index) => {
+                // Round-robin
+                const user = allStaff[index % allStaff.length];
+                assignments.push({
+                    user: user._id,
+                    task: task._id,
+                    date: new Date(),
+                    deadline: nextSunday,
+                    status: 'pendiente',
+                    xpReward: task.xpReward || 50
+                });
             });
-        });
+        }
     }
 
     // 4. Guardar
@@ -91,9 +102,8 @@ async function assignDailyTasks() {
         await Assignment.insertMany(assignments);
         console.log(`🎲 ÉXITO: Se repartieron ${assignments.length} tareas.`);
     } else {
-        console.log('ℹ️ No hubo tareas para asignar hoy.');
+        console.log('ℹ️ No hubo tareas para asignar hoy (o falta personal).');
     }
 }
 
-// ¡ESTA LÍNEA ES LA MÁS IMPORTANTE!
 module.exports = { assignDailyTasks };

@@ -7,8 +7,12 @@ const userSchema = new mongoose.Schema({
     active: { type: Boolean, default: true },
     xp: { type: Number, default: 0 },
     badges: { type: [String], default: ['🌱 Novato'] },
-    restDays: { type: [Number], default: [] }, // 0=Domingo, 1=Lunes, etc.
-    shift: { type: String, enum: ['matutino', 'vespertino', 'completo'], default: 'matutino' } // Nuevo campo
+    // weeklySchedule: Array de 7 strings. Índice 0=Domingo, 1=Lunes...
+    // Valores posibles: 'matutino', 'vespertino', 'descanso'
+    weeklySchedule: {
+        type: [String],
+        default: ['descanso', 'matutino', 'matutino', 'matutino', 'matutino', 'matutino', 'matutino']
+    }
 });
 
 // 2. Esquema de Tarea
@@ -17,7 +21,8 @@ const taskSchema = new mongoose.Schema({
     description: String,
     requiredRole: { type: String, default: null },
     frequency: { type: String, default: 'diaria' },
-    type: { type: String, enum: ['role', 'cleaning'], default: 'cleaning' } // 'role' = Puesto diario, 'cleaning' = Limpieza semanal
+    type: { type: String, enum: ['role', 'cleaning'], default: 'cleaning' },
+    shift: { type: String, enum: ['matutino', 'vespertino', 'general'], default: 'general' } // Nuevo campo
 });
 
 // 3. Esquema de Asignación (ACTUALIZADO)
