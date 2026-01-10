@@ -16,6 +16,23 @@ function App() {
   const [stats, setStats] = useState([]); // Nuevo estado para estadísticas
   const [adminPassword, setAdminPassword] = useState(''); // Estado para guardar el password temporalmente
 
+  // --- CONFIGURACIÓN DE TIERS (Frontend) ---
+  const TIER_NAMES = {
+    1: 'Elemental',
+    2: 'Astral',
+    3: 'Celestial',
+    4: 'Cósmico',
+    5: 'Universal'
+  };
+
+  const TIER_THEMES = {
+    1: { bg: '#f5f5f5', header: '#ff5722', card: 'white' }, // Elemental (Fuego/Tierra)
+    2: { bg: '#1a1a2e', header: '#16213e', card: '#0f3460', text: 'white' }, // Astral (Dark Blue)
+    3: { bg: '#fcfbf4', header: '#d4af37', card: '#fffdf0' }, // Celestial (Gold/White)
+    4: { bg: '#120129', header: '#6a0572', card: '#2d1b4e', text: '#e0e0e0' }, // Cósmico (Purple/Neon)
+    5: { bg: '#000000', header: '#333333', card: '#111111', text: '#f0f0f0', border: '2px solid rainbow' } // Universal
+  };
+
   // Estado para gestión de tareas (CRUD)
   const [availableTasks, setAvailableTasks] = useState([]);
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -153,6 +170,26 @@ function App() {
       axios.get(`${API_URL}/dashboard`, { headers: { 'x-admin-password': adminPassword } }).then(r => setReport(r.data));
     }).catch(err => {
       alert("Error al eliminar asignación.");
+    });
+  };
+
+  const ascendUser = () => {
+    if (!currentUser) return;
+    if (!confirm("¡ADVERTENCIA! Al ascender de Tier perderás toda tu XP actual y comenzarás desde 0 en el nuevo plano de existencia. Tus insignias actuales serán reemplazadas por el nuevo rango. ¿Estás listo para evolucionar?")) return;
+
+    axios.post(`${API_URL}/ascend`, { userId: currentUser._id }).then((res) => {
+      if (res.data.success) {
+        confetti({ particleCount: 500, spread: 360, startVelocity: 50 }); // SUPER Confetti
+        alert(`✨ ¡ASCENSIÓN COMPLETADA! Ahora eres Tier ${res.data.tier}: ${TIER_NAMES[res.data.tier] || ''}.`);
+        // Recargar usuario
+        axios.get(`${API_URL}/users`).then(uRes => {
+          setUsers(uRes.data);
+          const updatedUser = uRes.data.find(u => u._id === currentUser._id);
+          setCurrentUser(updatedUser);
+        });
+      }
+    }).catch(err => {
+      alert(err.response?.data?.error || "Error al ascender.");
     });
   };
 
@@ -366,32 +403,84 @@ function App() {
   }
 
   // --- VISTA 3: TAREAS DEL EMPLEADO (CON GAMIFICATION) ---
-  const level = currentUser ? getLevel(currentUser.xp) : 1;
-  const nextLevelXp = getNextLevelXp(level);
-  const currentLevelBaseXp = getNextLevelXp(level - 1);
-  const progressPercent = currentUser ? Math.min(100, Math.max(0, ((currentUser.xp || 0) - currentLevelBaseXp) / (nextLevelXp - currentLevelBaseXp) * 100)) : 0;
+  const currentLevel = currentUser ? getLevel(currentUser.xp) : 1;
+  const currentTier = currentUser?.tier || 1;
+  const theme = TIER_THEMES[currentTier] || TIER_THEMES[1];
+
+  // Progreso hacia Ascensión (10,000 XP)
+  const progressPercent = Math.min(100, Math.max(0, ((currentUser?.xp || 0) / 10000) * 100));
+
+  const containerStyle = {
+    background: theme.bg,
+    minHeight: '100vh',
+    color: theme.text || '#333',
+    transition: 'background 0.5s ease',
+    padding: '20px'
+  };
+
+  const cardStyle = {
+    background: theme.card,
+    color: theme.text || '#333',
+    padding: '15px',
+    borderRadius: '12px',
+    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+    marginBottom: '20px',
+    border: theme.border || 'none'
+  };
 
   return (
-    <div className="container">
-      <div className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-        <h2>Hola, {currentUser.name} 👋</h2>
-        <button onClick={() => setView('login')} className="back-btn">⬅ Salir</button>
+    <div style={containerStyle}> {/* Replaces className="container" default style */}
+      <div className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div>
+          <h2 style={{ margin: 0 }}>Hola, {currentUser.name} 👋</h2>
+          <small style={{ opacity: 0.8 }}>{TIER_NAMES[currentTier]} • Nivel {currentLevel}</small>
+        </div>
+        <button onClick={() => setView('login')} className="back-btn" style={{ background: '#f44336' }}>⬅ Salir</button>
       </div>
 
       {/* GAMIFICATION HEADER */}
-      <div className="user-level-info">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span className="level-badge">Nivel {level}</span>
-          <span className="xp-text">{currentUser.xp || 0} / {nextLevelXp} XP</span>
+      <div style={cardStyle}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <span className="level-badge" style={{ background: theme.header || '#6200ea', color: 'white' }}>
+            Tier {currentTier}: {TIER_NAMES[currentTier]}
+          </span>
+          <span className="xp-text">{currentUser.xp || 0} / 10,000 XP</span>
         </div>
-        <div className="xp-progress-bar">
-          <div className="xp-fill" style={{ width: `${progressPercent}%` }}></div>
+
+        <div className="xp-progress-bar" style={{ background: 'rgba(0,0,0,0.1)' }}>
+          <div className="xp-fill" style={{ width: `${progressPercent}%`, background: currentTier > 1 ? `linear-gradient(90deg, ${theme.header}, #00e676)` : '#4caf50' }}></div>
         </div>
-        {currentUser.badges && currentUser.badges.length > 0 && (
-          <div className="badges-container">
-            {currentUser.badges.map((badge, i) => (
-              <span key={i} className="badge-item">{badge}</span>
+
+        <div style={{ marginTop: '15px' }}>
+          <strong>Insignias:</strong>
+          <div className="badges-container" style={{ marginTop: '5px' }}>
+            {currentUser.badges && currentUser.badges.map((badge, i) => (
+              <span key={i} className="badge-item" style={{ background: '#eee', color: '#333', border: '1px solid #ddd' }}>{badge}</span>
             ))}
+          </div>
+        </div>
+
+        {/* ASCENSION BUTTON */}
+        {currentUser.xp >= 10000 && currentTier < 5 && (
+          <div style={{ marginTop: '20px', textAlign: 'center' }}>
+            <p>✨ Has alcanzado el límite de este plano ✨</p>
+            <button
+              onClick={ascendUser}
+              style={{
+                background: 'linear-gradient(45deg, #FFD700, #FFEA00, #FFD700)',
+                color: 'black',
+                fontWeight: 'bold',
+                padding: '15px 30px',
+                fontSize: '1.1rem',
+                border: 'none',
+                borderRadius: '50px',
+                cursor: 'pointer',
+                boxShadow: '0 0 20px rgba(255, 215, 0, 0.6)',
+                animation: 'pulse 1.5s infinite'
+              }}
+            >
+              🌀 ASCENDER AL SIGUIENTE NIVEL 🌀
+            </button>
           </div>
         )}
       </div>
@@ -493,7 +582,10 @@ const EmployeeManagement = ({ users, adminPassword, refreshUsers, fetchStats }) 
               <tr key={u._id}>
                 <td>{u.name}</td>
                 <td><small>{u.shift || 'N/A'}</small></td>
-                <td>Nivel {Math.floor((u.xp || 0) / 1000) + 1} ({u.xp || 0} XP)</td>
+                <td>
+                  <div>{TIER_NAMES[u.tier || 1]}</div>
+                  <small>Nivel {Math.floor((u.xp || 0) / 1000) + 1} ({u.xp || 0} XP)</small>
+                </td>
                 <td>
                   <button onClick={() => punishUser(u._id, u.name)} className="delete-btn" style={{ background: '#FF5722', marginRight: '5px' }} title="Castigar (Restar XP)">
                     ⚡

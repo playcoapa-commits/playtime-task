@@ -4,6 +4,26 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const cron = require('node-cron');
 const { User, Assignment, Task } = require('./models');
+
+// --- CONFIGURACIÓN DE TIERS Y BADGES ---
+const TIERS_CONFIG = {
+    1: { name: 'Elemental', badges: { 0: '🌱 La Chispa', 500: '🔥 La Flama Creciente', 2000: '🌊 La Ola de Energía', 5000: '☀️ El Núcleo Solar', 10000: '💎 El Prisma Maestro' } },
+    2: { name: 'Astral', badges: { 0: '🌌 Polvo Estelar', 2000: '☄️ Llamarada Solar', 4000: '🌊 Nebulosa Fluyente', 7000: '🌟 Púlsar Dorado', 10000: '🌈 Quásar Prismático' } },
+    3: { name: 'Celestial', badges: { 0: '🕊️ Luz Divina', 2000: '🔥 Fuego Sagrado', 4000: '🌬️ Aliento Creador', 7000: '👼 Halo Radiante', 10000: '👑 Corona de Cristal' } },
+    4: { name: 'Cósmico', badges: { 0: '⚛️ Singularidad', 2000: '💥 Supernova', 4000: '🌀 Vórtice Temporal', 7000: '🌌 Núcleo Galáctico', 10000: '🕳️ Matriz Universal' } },
+    5: { name: 'Universal', badges: { 0: '🎆 Partícula Primordial', 2000: '🌠 Expansión Inicial', 4000: '🕸️ Tejido del Espacio', 7000: '🪐 Multiverso', 10000: '♾️ La Fuente' } }
+};
+
+const getBadge = (tier, xp) => {
+    const tierConfig = TIERS_CONFIG[tier] || TIERS_CONFIG[1];
+    let earnedBadge = null;
+    // Encontrar la insignia de mayor rango alcanzada
+    const thresholds = Object.keys(tierConfig.badges).map(Number).sort((a, b) => a - b);
+    for (let t of thresholds) {
+        if (xp >= t) earnedBadge = tierConfig.badges[t];
+    }
+    return earnedBadge;
+};
 const { assignDailyTasks } = require('./logic');
 
 const app = express();
@@ -88,25 +108,24 @@ app.post('/approve/:id', async (req, res) => {
         if (user) {
             user.xp += (assignment.xpReward || 50); // XP Personalizada o defecto 50
 
-            // Insignias
-            const badges = user.badges || [];
-            if (!badges.includes('🌱 Novato')) user.badges = ['🌱 Novato'];
-            const newBadges = [];
+            // Gamificación: Insignias basada en Tier y XP
+            const currentBadge = getBadge(user.tier || 1, user.xp);
 
-            if (user.xp >= 500 && !user.badges.includes('🥉 Bronce')) newBadges.push('🥉 Bronce');
-            if (user.xp >= 2000 && !user.badges.includes('🥈 Plata')) newBadges.push('🥈 Plata');
-            if (user.xp >= 5000 && !user.badges.includes('🥇 Oro')) newBadges.push('🥇 Oro');
-            if (user.xp >= 10000 && !user.badges.includes('💎 Diamante')) newBadges.push('💎 Diamante');
+            // Si el usuario merece una insignia que no tiene en su lista, la agregamos
+            // Nota: En este nuevo sistema, podríamos querer mostrar SOLO la insignia actual de mayor rango, 
+            // o mantener el historial. Para simplificar visualmente mostraremos "Rangos" acumulados del tier actual.
 
-            if (newBadges.length > 0) {
-                user.badges = [...user.badges, ...newBadges];
+            if (currentBadge && !user.badges.includes(currentBadge)) {
+                user.badges.push(currentBadge);
             }
+
             await user.save();
 
             return res.json({
                 success: true,
                 xp: user.xp,
-                newBadges,
+                tier: user.tier || 1,
+                lastBadge: currentBadge,
                 allBadges: user.badges
             });
         }
@@ -159,7 +178,9 @@ app.get('/stats', async (req, res) => {
                 total,
                 completed,
                 percentage,
-                xp: user.xp || 0 // Added XP field
+                percentage,
+                xp: user.xp || 0,
+                tier: user.tier || 1 // Added Tier
             });
         }
 
@@ -282,6 +303,39 @@ app.delete('/assignments/:id', async (req, res) => {
         res.json({ success: true, message: 'Asignación eliminada' });
     } catch (err) {
         res.status(500).json({ error: 'Error al eliminar asignación' });
+    }
+});
+
+// 4.6. ASCENDER DE TIER
+app.post('/ascend', async (req, res) => {
+    try {
+        const { userId } = req.body;
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+        if (user.xp < 10000) {
+            return res.status(400).json({ error: 'Aún no tienes suficiente XP para ascender.' });
+        }
+        if ((user.tier || 1) >= 5) {
+            return res.status(400).json({ error: 'Has alcanzado el máximo nivel de existencia.' });
+        }
+
+        // Ascensión
+        user.tier = (user.tier || 1) + 1;
+        user.xp = 0; // Reset XP
+
+        // Asignar primera insignia del nuevo tier
+        const newBadge = TIERS_CONFIG[user.tier].badges[0];
+        user.badges = [newBadge]; // Reset badges to new tier start? Or keep history?
+        // Let's Keep history clean per tier for now to avoid clutter, or maybe append?
+        // User request implied "New set of badges". 
+        // Vamos a REINICIAR las badges para que se vea limpio el progreso del nuevo Tier.
+
+        await user.save();
+        res.json({ success: true, tier: user.tier, badge: newBadge });
+
+    } catch (err) {
+        res.status(500).json({ error: 'Error en la ascensión' });
     }
 });
 

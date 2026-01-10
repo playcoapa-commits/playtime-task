@@ -12,7 +12,8 @@ const userSchema = new mongoose.Schema({
     weeklySchedule: {
         type: [String],
         default: ['descanso', 'matutino', 'matutino', 'matutino', 'matutino', 'matutino', 'matutino']
-    }
+    },
+    tier: { type: Number, default: 1 } // 1=Elemental, 2=Astral, 3=Celestial, 4=Cósmico, 5=Universal
 });
 
 // 2. Esquema de Tarea
