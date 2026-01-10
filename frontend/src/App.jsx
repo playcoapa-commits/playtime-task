@@ -33,6 +33,9 @@ function App() {
   const [stats, setStats] = useState([]); // Nuevo estado para estadísticas
   const [adminPassword, setAdminPassword] = useState(''); // Estado para guardar el password temporalmente
 
+  // Nuevo Estado para Detalle de Empleado
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
+
   // Estado para gestión de tareas (CRUD)
   const [availableTasks, setAvailableTasks] = useState([]);
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -66,6 +69,11 @@ function App() {
           alert("Error al conectar con el servidor");
         }
       });
+  };
+
+  const viewEmployeeDetail = (id) => {
+    setSelectedEmployeeId(id);
+    setView('employee_detail');
   };
 
   const fetchStats = (password) => {
@@ -271,7 +279,14 @@ function App() {
               <tbody>
                 {stats.map((stat, idx) => (
                   <tr key={idx}>
-                    <td><strong>{stat.name}</strong></td>
+                    <td>
+                      <strong
+                        style={{ cursor: 'pointer', color: '#007bff', textDecoration: 'underline' }}
+                        onClick={() => viewEmployeeDetail(stat._id)}
+                      >
+                        {stat.name} 🔗
+                      </strong>
+                    </td>
                     <td>{stat.total}</td>
                     <td>{stat.completed}</td>
                     <td>
@@ -423,6 +438,17 @@ function App() {
           </table>
         </div>
       </div>
+    );
+  }
+
+  // --- VISTA 2.5: DETALLE DE EMPLEADO (DASHBOARD INDIVIDUAL) ---
+  if (view === 'employee_detail') {
+    return (
+      <EmployeeDetail
+        userId={selectedEmployeeId}
+        adminPassword={adminPassword}
+        onBack={() => setView('admin')}
+      />
     );
   }
 
@@ -679,6 +705,89 @@ const ManualAssignment = ({ users, tasks, adminPassword }) => {
           ⭐ Asignar Tarea Especial
         </button>
       </div>
+    </div>
+  );
+};
+
+const EmployeeDetail = ({ userId, adminPassword, onBack }) => {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    axios.get(`${API_URL}/users/${userId}/analytics`, {
+      headers: { 'x-admin-password': adminPassword }
+    }).then(res => setData(res.data))
+      .catch(err => alert("Error cargando datos del empleado"));
+  }, [userId, adminPassword]);
+
+  if (!data) return <div className="container">Cargando perfil...</div>;
+
+  const { user, stats, history } = data;
+
+  return (
+    <div className="container" style={{ background: '#f8f9fa', color: '#333' }}>
+      <button onClick={onBack} className="back-btn" style={{ marginBottom: '20px' }}>⬅ Volver al Reporte</button>
+
+      <div className="profile-header" style={{ background: 'white', padding: '20px', borderRadius: '15px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', textAlign: 'center' }}>
+        <div style={{ fontSize: '3rem', marginBottom: '10px' }}>👤</div>
+        <h1 style={{ color: '#333', marginBottom: '5px' }}>{user.name}</h1>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <span className="badge-item" style={{ background: '#6200ea', color: 'white' }}>Tier {user.tier}: {TIER_NAMES[user.tier]}</span>
+          <span className="badge-item" style={{ background: '#FFC107', color: 'black' }}>{user.xp} XP Totales</span>
+          <span className="badge-item" style={{ background: '#00C853', color: 'white' }}>{stats.percentage}% Efectividad</span>
+        </div>
+      </div>
+
+      <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px', marginTop: '20px' }}>
+        <div className="stat-card" style={{ background: 'white', padding: '15px', borderRadius: '10px', textAlign: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
+          <h3>📅 Días</h3>
+          <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0, color: '#3F51B5' }}>{stats.daysWorked}</p>
+          <small>Trabajados con actividad</small>
+        </div>
+        <div className="stat-card" style={{ background: 'white', padding: '15px', borderRadius: '10px', textAlign: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
+          <h3>✅ Tareas</h3>
+          <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0, color: '#4CAF50' }}>{stats.completedTasks}</p>
+          <small>Completadas exitosamente</small>
+        </div>
+        <div className="stat-card" style={{ background: 'white', padding: '15px', borderRadius: '10px', textAlign: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
+          <h3>⚡ Total</h3>
+          <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0, color: '#FF9800' }}>{stats.totalTasks}</p>
+          <small>Tareas asignadas</small>
+        </div>
+      </div>
+
+      <h3 style={{ marginTop: '30px' }}>🏅 Historial de Insignias</h3>
+      <div className="badges-container" style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '10px 0' }}>
+        {user.badges.length > 0 ? user.badges.map((b, i) => (
+          <span key={i} style={{ padding: '8px 15px', background: '#fff', border: '1px solid #ddd', borderRadius: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+            {b}
+          </span>
+        )) : <p>Sin insignias aún.</p>}
+      </div>
+
+      <h3 style={{ marginTop: '30px' }}>📜 Últimas Tareas</h3>
+      <div className="table-responsive">
+        <table className="report-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Tarea</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {history.map(h => (
+              <tr key={h._id}>
+                <td>{new Date(h.date).toLocaleDateString()}</td>
+                <td>{h.task?.title || 'Tarea borrada'}</td>
+                <td>
+                  {h.status === 'completada' ? '✅' : h.status === 'revision' ? '🕵️' : '⏳'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
     </div>
   );
 };

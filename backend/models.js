@@ -23,7 +23,8 @@ const taskSchema = new mongoose.Schema({
     requiredRole: { type: String, default: null },
     frequency: { type: String, default: 'diaria' },
     type: { type: String, enum: ['role', 'cleaning'], default: 'cleaning' },
-    shift: { type: String, enum: ['matutino', 'vespertino', 'general'], default: 'general' } // Nuevo campo
+    shift: { type: String, enum: ['matutino', 'vespertino', 'general'], default: 'general' },
+    xpReward: { type: Number, default: 100 } // Nuevo campo para personalizar XP por tarea
 });
 
 // 3. Esquema de Asignación (ACTUALIZADO)

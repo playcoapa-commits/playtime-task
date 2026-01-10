@@ -174,13 +174,13 @@ app.get('/stats', async (req, res) => {
             const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 
             stats.push({
+                _id: user._id, // Added ID for frontend linking
                 name: user.name,
                 total,
                 completed,
                 percentage,
-                percentage,
                 xp: user.xp || 0,
-                tier: user.tier || 1 // Added Tier
+                tier: user.tier || 1
             });
         }
 
@@ -191,6 +191,56 @@ app.get('/stats', async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error obteniendo estadísticas' });
+    }
+});
+
+// 4.1.5 NUEVO: ANALÍTICAS DETALLADAS DE EMPLEADO
+app.get('/users/:id/analytics', async (req, res) => {
+    const password = req.headers['x-admin-password'];
+    if (password !== ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Contraseña incorrecta' });
+    }
+
+    try {
+        const userId = req.params.id;
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+        // Tareas del usuario
+        const assignments = await Assignment.find({ user: userId })
+            .populate('task')
+            .sort({ date: -1 });
+
+        const totalTasks = assignments.length;
+        const completedTasks = assignments.filter(a => a.status === 'completada').length;
+
+        // Días trabajados (fechas únicas de asignaciones)
+        const uniqueDates = new Set(assignments.map(a => new Date(a.date).toDateString()));
+        const daysWorked = uniqueDates.size;
+
+        // Historial reciente (últimas 10)
+        const history = assignments.slice(0, 10);
+
+        res.json({
+            user: {
+                name: user.name,
+                tier: user.tier || 1,
+                xp: user.xp || 0,
+                badges: user.badges || [],
+                joinedAt: user._id.getTimestamp()
+            },
+            stats: {
+                totalTasks,
+                completedTasks,
+                percentage: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
+                daysWorked
+            },
+            history
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Error obteniendo analíticas' });
     }
 });
 

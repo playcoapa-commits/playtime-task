@@ -58,7 +58,7 @@ const seedDatabase = async () => {
     const rolesConfig = [
       { title: 'Caja Principal', xp: 100 },
       { title: 'Canje de Premios', xp: 100 },
-      { title: 'Area Infantil', xp: 120 }
+      { title: 'Area Infantil', xp: 50 }
     ];
 
     const roles = [];
