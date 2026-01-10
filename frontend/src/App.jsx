@@ -95,6 +95,11 @@ function App() {
   const completeTask = (id) => {
     axios.post(`${API_URL}/complete/${id}`).then((res) => {
       if (res.data.success) {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
         alert("✅ Tarea enviada a revisión. ¡Buen trabajo!");
       }
       loadTasks(currentUser._id);
