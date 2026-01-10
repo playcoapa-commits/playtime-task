@@ -1,46 +1,87 @@
-# 🧸 Play Time Task Manager
+# 🧸 Play Time Task Manager (v2.0: Elemental Evolution)
 
-Sistema de gestión de tareas y gamificación para empleados de Play Time.
+Sistema integral de **Gestión Operativa** y **Gamificación Avanzada** para la sucursal Playtime Coapa. Este sistema automatiza la asignación de roles, limpieza de máquinas y motiva al personal mediante un sistema de progresión RPG "Skyrim-style".
 
-## 🔗 Enlaces Importantes
+## 🌌 Novedad: Evolución Elemental
+El sistema ahora cuenta con **5 Planos de Existencia (Tiers)**. Los empleados comienzan en el plano Elemental y deben "Ascender" para desbloquear nuevos temas visuales e insignias.
 
-| Servicio | URL |
-|----------|-----|
-| **Repositorio GitHub** | [playcoapa-commits/playtime-task](https://github.com/playcoapa-commits/playtime-task) |
-| **Backend (API)** | `https://playtime-backend-1g83.onrender.com` |
-| **Frontend (App)** | *(Consulta tu dashboard de Render/Vercel)* |
+| Tier | Nombre | Meta XP | Tema Visual |
+| :--- | :--- | :--- | :--- |
+| **1** | **Elemental** | 10,000 | Fuego/Tierra (Básico) |
+| **2** | **Astral** | 10,000 | Espacio Profundo (Azul Oscuro) |
+| **3** | **Celestial** | 10,000 | Divino (Dorado/Blanco) |
+| **4** | **Cósmico** | 10,000 | Neón (Púrpura/Cyberpunk) |
+| **5** | **Universal** | ∞ | Infinito (Arcoíris/Negro) |
 
-## 🔑 Credenciales de Acceso
+**🌀 La Ascensión**: Al llegar a 10,000 XP, el usuario puede pulsar el botón de "Ascender". Esto **reinicia su XP a 0** pero sube su Tier (+1) y desbloquea el siguiente set de insignias.
 
-**Panel de Gerencia (Admin)**
-- **Acceso**: Botón "🔒 Panel de Gerencia" en la pantalla de inicio.
-- **Contraseña**: `admin123`
+---
 
 ## 🚀 Funcionalidades Principales
 
-1.  **Gestión de Tareas**: Crear, asignar y eliminar tareas.
-2.  **Gestión de Empleados**: Contratar y despedir personal.
-3.  **Gamificación**:
-    *   **XP**: +50 XP por tarea (o personalizado).
-    *   **Niveles**: Suben cada 1000 XP.
-    *   **Insignias**: Novato, Bronce, Plata, Oro, Diamante.
-4.  **Asignación Manual**: Asignar tareas específicas con recompensas de XP personalizadas.
-5.  **Reportes**: Estadísticas de rendimiento y efectividad.
+### 📋 Gestión Operativa
+*   **Asignación Automática Inteligente**: El sistema asigna roles diarios (Caja, Canje, etc.) basándose en el **Horario Semanal** de cada empleado (Matutino/Vespertino).
+*   **Limpieza Semanal**: Distribuye la limpieza de las 60+ máquinas recreativas equitativamente.
+*   **Registro Diario**: Panel para ver quién hizo qué, a qué hora, y validar las tareas.
+*   **Delegación**: Los gerentes pueden reasignar tareas si alguien falta.
 
-## 🛠️ Comandos Útiles
+### 🎮 Gamificación (XP)
+*   **Roles Diarios**: +100 XP.
+*   **Limpieza de Máquina**: +50 XP.
+*   **Castigos**: Los gerentes pueden restar XP (⚡ Botón de Castigo) por mal comportamiento.
+*   **Insignias**: 5 Rangos por Tier (ej: Polvo Estelar, Supernova, etc.).
 
-**Instalar dependencias:**
+### 📊 Reporte Gerencial
+*   **Dashboard**: Vista en tiempo real del cumplimiento de tareas.
+*   **Estadísticas**: Tabla de rendimiento con % de efectividad y XP Total acumulada.
+*   **Limpieza**: Botón 🗑️ para eliminar tareas erróneas del registro.
+
+---
+
+## 🛠️ Guía Técnica
+
+### Estructura del Proyecto
+*   **/backend**: Servidor Node.js + Express + MongoDB.
+    *   `server.js`: API REST y Lógica de Tiers (`TIERS_CONFIG`).
+    *   `logic.js`: Algoritmo de asignación de turnos (`assignDailyTasks`).
+    *   `_DANGEROUS_seed_reset.js`: **PELIGRO**. Reinicia la base de datos a cero. Requiere `--force`.
+    *   `update_db.js` (Planeado): Para agregar máquinas sin borrar datos.
+*   **/frontend**: React + Vite (Single Page Application).
+    *   `App.jsx`: Contiene toda la lógica de UI, temas dinámicos y rutas.
+
+### Instalación y Despliegue
+
+**1. Requisitos**
+*   Node.js v18+
+*   MongoDB (URI en `.env`)
+
+**2. Instalación Local**
 ```bash
-cd backend && npm install
-cd frontend && npm install
+# Backend
+cd backend
+npm install
+# Crear archivo .env en raiz con: MONGO_URI=...
+
+# Frontend
+cd frontend
+npm install
 ```
 
-**Correr localmente:**
-`backend`:
+**3. Ejecución**
 ```bash
-npm start
+# Terminal 1 (Backend)
+cd backend && npm start
+
+# Terminal 2 (Frontend)
+cd frontend && npm run dev
 ```
-`frontend`:
-```bash
-npm run dev
-```
+
+### 🔑 Credenciales (Hardcoded)
+*   **Admin Password**: `admin123` (Modificar `server.js` para cambiarla).
+
+### 🛡️ Seguridad de Datos
+*   El código de despliegue **NO** borra la base de datos.
+*   El script de `seed` ha sido desactivado y renombrado para evitar accidentes.
+
+---
+*Desarrollado para Playtime Coapa - 2026*

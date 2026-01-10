@@ -6,6 +6,23 @@ import './App.css';
 // Recuerda: si estás en la misma PC usa localhost. 
 const API_URL = 'https://playtime-backend-1g83.onrender.com';
 
+// --- CONFIGURACIÓN DE TIERS (Global) ---
+const TIER_NAMES = {
+  1: 'Elemental',
+  2: 'Astral',
+  3: 'Celestial',
+  4: 'Cósmico',
+  5: 'Universal'
+};
+
+const TIER_THEMES = {
+  1: { bg: '#f5f5f5', header: '#ff5722', card: 'white' },
+  2: { bg: '#1a1a2e', header: '#16213e', card: '#0f3460', text: 'white' },
+  3: { bg: '#fcfbf4', header: '#d4af37', card: '#fffdf0' },
+  4: { bg: '#120129', header: '#6a0572', card: '#2d1b4e', text: '#e0e0e0' },
+  5: { bg: '#000000', header: '#333333', card: '#111111', text: '#f0f0f0', border: '2px solid rainbow' }
+};
+
 function App() {
   const [view, setView] = useState('login'); // 'login', 'tasks', 'admin'
   const [users, setUsers] = useState([]);
@@ -15,23 +32,6 @@ function App() {
 
   const [stats, setStats] = useState([]); // Nuevo estado para estadísticas
   const [adminPassword, setAdminPassword] = useState(''); // Estado para guardar el password temporalmente
-
-  // --- CONFIGURACIÓN DE TIERS (Frontend) ---
-  const TIER_NAMES = {
-    1: 'Elemental',
-    2: 'Astral',
-    3: 'Celestial',
-    4: 'Cósmico',
-    5: 'Universal'
-  };
-
-  const TIER_THEMES = {
-    1: { bg: '#f5f5f5', header: '#ff5722', card: 'white' }, // Elemental (Fuego/Tierra)
-    2: { bg: '#1a1a2e', header: '#16213e', card: '#0f3460', text: 'white' }, // Astral (Dark Blue)
-    3: { bg: '#fcfbf4', header: '#d4af37', card: '#fffdf0' }, // Celestial (Gold/White)
-    4: { bg: '#120129', header: '#6a0572', card: '#2d1b4e', text: '#e0e0e0' }, // Cósmico (Purple/Neon)
-    5: { bg: '#000000', header: '#333333', card: '#111111', text: '#f0f0f0', border: '2px solid rainbow' } // Universal
-  };
 
   // Estado para gestión de tareas (CRUD)
   const [availableTasks, setAvailableTasks] = useState([]);
