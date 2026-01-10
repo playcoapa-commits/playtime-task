@@ -193,6 +193,20 @@ function App() {
     });
   };
 
+  const forceDailyAssignment = () => {
+    if (!confirm('¿Estás seguro de FORZAR la asignación diaria? Esto generará tareas para todos los empleados activos según su horario. Úsalo solo si el sistema automático falló.')) return;
+
+    axios.post(`${API_URL}/force-assign`, {}, {
+      headers: { 'x-admin-password': adminPassword }
+    }).then(() => {
+      alert("✅ Asignación masiva completada. Se han generado las tareas del día.");
+      // Refresh report
+      axios.get(`${API_URL}/dashboard`, { headers: { 'x-admin-password': adminPassword } }).then(r => setReport(r.data));
+    }).catch(err => {
+      alert("Error al forzar asignación.");
+    });
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     const date = new Date(dateString);
@@ -332,6 +346,16 @@ function App() {
           tasks={availableTasks}
           adminPassword={adminPassword}
         />
+
+        <div style={{ textAlign: 'center', marginTop: '20px' }}>
+          <button
+            onClick={forceDailyAssignment}
+            style={{ background: '#FF5722', fontWeight: 'bold', padding: '10px 20px', borderRadius: '8px', border: '2px solid #E64A19' }}
+          >
+            ⚠️ FORZAR ASIGNACIÓN DIARIA (CRON)
+          </button>
+          <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '5px' }}>Presiona esto solo si las tareas no se generaron automáticamente hoy.</p>
+        </div>
 
         <br />
         <hr />
