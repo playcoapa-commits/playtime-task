@@ -225,6 +225,10 @@ function App() {
   const getLevel = (xp) => Math.floor((xp || 0) / 1000) + 1;
   const getNextLevelXp = (level) => level * 1000;
 
+  const showAbout = () => {
+    alert("✨ Playtime Task Manager ✨\n\nDesarrollado con ❤️ por: Aldo Chayanne\nVersión: beta (Elemental)");
+  };
+
   // --- VISTA 1: LOGIN ---
   if (view === 'login') {
     return (
@@ -248,6 +252,9 @@ function App() {
         <br />
         <button onClick={enterAdminMode} className="admin-link">
           🔒 Panel de Gerencia
+        </button>
+        <button onClick={showAbout} className="admin-link" style={{ marginTop: '10px', fontSize: '0.9rem', opacity: 0.7 }}>
+          ℹ️ Acerca de
         </button>
       </div>
     );
