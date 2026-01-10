@@ -386,7 +386,7 @@ app.put('/assignments/:id/delegate', async (req, res) => {
 
 // 6. Endpoint para forzar asignación (Manual)
 app.post('/force-assign', async (req, res) => {
-    await assignDailyTasks();
+    await assignDailyTasks(true);
     res.send('Asignación forzada completada');
 });
 

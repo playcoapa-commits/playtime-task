@@ -3,8 +3,8 @@ const { User, Task, Assignment } = require('./models');
 // Función para mezclar arrays
 const shuffle = (array) => array.sort(() => Math.random() - 0.5);
 
-async function assignDailyTasks() {
-    console.log('--- Iniciando reparto inteligente de tareas (Turnos) ---');
+async function assignDailyTasks(force = false) {
+    console.log(`--- Iniciando reparto inteligente de tareas (Turnos) [Force: ${force}] ---`);
 
     const today = new Date();
     const dayOfWeek = today.getDay(); // 0=Domingo, 1=Lunes, ...
@@ -13,15 +13,17 @@ async function assignDailyTasks() {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
-    // 1. Evitar duplicar roles de hoy
-    const rolesAssigned = await Assignment.findOne({
-        date: { $gte: startOfDay },
-        // Simple check: si ya hay assignments hoy, abortamos.
-    });
+    // 1. Evitar duplicar roles de hoy (Salvo que sea forzado)
+    if (!force) {
+        const rolesAssigned = await Assignment.findOne({
+            date: { $gte: startOfDay },
+            // Simple check: si ya hay assignments hoy, abortamos.
+        });
 
-    if (rolesAssigned) {
-        console.log('⚠️ Tareas (Roles) de hoy ya asignadas.');
-        return;
+        if (rolesAssigned) {
+            console.log('⚠️ Tareas (Roles) de hoy ya asignadas.');
+            return;
+        }
     }
 
     // 2. Obtener usuarios ACTIVOS
