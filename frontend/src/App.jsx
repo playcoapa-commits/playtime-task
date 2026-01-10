@@ -139,6 +139,18 @@ function App() {
     }
   };
 
+  const deleteAssignment = (id) => {
+    if (!confirm('¿Seguro que deseas eliminar esta asignación del registro?')) return;
+    axios.delete(`${API_URL}/assignments/${id}`, {
+      headers: { 'x-admin-password': adminPassword }
+    }).then(() => {
+      // Recargar reporte y stats
+      axios.get(`${API_URL}/dashboard`, { headers: { 'x-admin-password': adminPassword } }).then(r => setReport(r.data));
+    }).catch(err => {
+      alert("Error al eliminar asignación.");
+    });
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     const date = new Date(dateString);
@@ -197,6 +209,7 @@ function App() {
                   <th>Tareas Totales</th>
                   <th>Completadas</th>
                   <th>Efectividad</th>
+                  <th>XP Total</th>
                 </tr>
               </thead>
               <tbody>
@@ -214,6 +227,7 @@ function App() {
                         <span>{stat.percentage}%</span>
                       </div>
                     </td>
+                    <td><strong>{stat.xp} XP</strong></td>
                   </tr>
                 ))}
               </tbody>
@@ -289,6 +303,8 @@ function App() {
                 <th>Hora Terminado</th>
                 <th>Empleado</th>
                 <th>Máquina</th>
+                <th>XP Ganada</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -325,6 +341,16 @@ function App() {
                     )}
                   </td>
                   <td>{log.task?.title || 'Tarea borrada'}</td>
+                  <td>
+                    {log.status === 'completada' ?
+                      <span style={{ color: 'green', fontWeight: 'bold' }}>+{log.xpReward || 50} XP</span>
+                      : <span style={{ color: '#ccc' }}>{log.xpReward || 50} XP</span>}
+                  </td>
+                  <td>
+                    <button onClick={() => deleteAssignment(log._id)} className="delete-btn" title="Eliminar del Registro">
+                      🗑️
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -420,6 +446,19 @@ const EmployeeManagement = ({ users, adminPassword, refreshUsers, fetchStats }) 
     }).catch(err => alert("Error al eliminar usuario"));
   };
 
+  const punishUser = (id, name) => {
+    const amount = prompt(`¿Cuántos XP deseas restar a ${name}? (Castigo)`);
+    if (!amount) return;
+
+    axios.post(`${API_URL}/punish`, { userId: id, amount }, {
+      headers: { 'x-admin-password': adminPassword }
+    }).then(() => {
+      alert(`⚡ Castigo aplicado a ${name}.`);
+      refreshUsers();
+      fetchStats();
+    }).catch(() => alert("Error al aplicar castigo"));
+  };
+
   return (
     <div className="management-section" style={{ marginTop: '20px' }}>
       <h3>👥 Gestión de Personal</h3>
@@ -451,6 +490,9 @@ const EmployeeManagement = ({ users, adminPassword, refreshUsers, fetchStats }) 
                 <td><small>{u.shift || 'N/A'}</small></td>
                 <td>Nivel {Math.floor((u.xp || 0) / 1000) + 1} ({u.xp || 0} XP)</td>
                 <td>
+                  <button onClick={() => punishUser(u._id, u.name)} className="delete-btn" style={{ background: '#FF5722', marginRight: '5px' }} title="Castigar (Restar XP)">
+                    ⚡
+                  </button>
                   <button onClick={() => deleteUser(u._id)} className="delete-btn" title="Despedir">
                     ✕
                   </button>

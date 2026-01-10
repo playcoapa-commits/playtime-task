@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: '../.env' });
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -158,7 +158,8 @@ app.get('/stats', async (req, res) => {
                 name: user.name,
                 total,
                 completed,
-                percentage
+                percentage,
+                xp: user.xp || 0 // Added XP field
             });
         }
 
@@ -244,6 +245,43 @@ app.delete('/users/:id', async (req, res) => {
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: 'Error al eliminar usuario' });
+    }
+});
+
+// 4.4. NUEVO: CASTIGAR (RESTAR XP)
+app.post('/punish', async (req, res) => {
+    const password = req.headers['x-admin-password'];
+    if (password !== ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Contraseña incorrecta' });
+    }
+    try {
+        const { userId, amount } = req.body;
+        if (!userId || !amount) return res.status(400).json({ error: 'Faltan datos' });
+
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+        // Restar XP (sin bajar de 0)
+        user.xp = Math.max(0, (user.xp || 0) - Number(amount));
+        await user.save();
+
+        res.json({ success: true, newXp: user.xp });
+    } catch (err) {
+        res.status(500).json({ error: 'Error al aplicar castigo' });
+    }
+});
+
+// 4.5. NUEVO: ELIMINAR ASIGNACIÓN/TAREA ESPECÍFICA (Registro Diario)
+app.delete('/assignments/:id', async (req, res) => {
+    const password = req.headers['x-admin-password'];
+    if (password !== ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Contraseña incorrecta' });
+    }
+    try {
+        await Assignment.findByIdAndDelete(req.params.id);
+        res.json({ success: true, message: 'Asignación eliminada' });
+    } catch (err) {
+        res.status(500).json({ error: 'Error al eliminar asignación' });
     }
 });
 
