@@ -7,11 +7,11 @@ const { User, Assignment, Task } = require('./models');
 
 // --- CONFIGURACIÓN DE TIERS Y BADGES ---
 const TIERS_CONFIG = {
-    1: { name: 'Elemental', badges: { 0: '🌱 La Chispa', 500: '🔥 La Flama Creciente', 2000: '🌊 La Ola de Energía', 5000: '☀️ El Núcleo Solar', 10000: '💎 El Prisma Maestro' } },
+    1: { name: 'Elemental', badges: { 0: '🌱 La Chispa', 500: '🥉 La Flama Creciente', 2000: '🥈 La Ola de Energía', 5000: '🥇 El Núcleo Solar', 10000: '💎 El Prisma Maestro' } },
     2: { name: 'Astral', badges: { 0: '🌌 Polvo Estelar', 2000: '☄️ Llamarada Solar', 4000: '🌊 Nebulosa Fluyente', 7000: '🌟 Púlsar Dorado', 10000: '🌈 Quásar Prismático' } },
     3: { name: 'Celestial', badges: { 0: '🕊️ Luz Divina', 2000: '🔥 Fuego Sagrado', 4000: '🌬️ Aliento Creador', 7000: '👼 Halo Radiante', 10000: '👑 Corona de Cristal' } },
     4: { name: 'Cósmico', badges: { 0: '⚛️ Singularidad', 2000: '💥 Supernova', 4000: '🌀 Vórtice Temporal', 7000: '🌌 Núcleo Galáctico', 10000: '🕳️ Matriz Universal' } },
-    5: { name: 'Universal', badges: { 0: '🎆 Partícula Primordial', 2000: '🌠 Expansión Inicial', 4000: '🕸️ Tejido del Espacio', 7000: '🪐 Multiverso', 10000: '♾️ La Fuente' } }
+    5: { name: 'Universal', badges: { 0: '🎆 Partícula Primordial', 2000: '🌌 Expansión Inicial', 4000: '🕸️ Tejido del Espacio', 7000: '🪐 Multiverso', 10000: '♾️ La Fuente' } }
 };
 
 const getBadge = (tier, xp) => {
