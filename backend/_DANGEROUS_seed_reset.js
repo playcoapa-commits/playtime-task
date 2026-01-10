@@ -6,6 +6,13 @@ require('dotenv').config({ path: '../.env' });
 const MONGO_URI = process.env.MONGO_URI;
 
 const seedDatabase = async () => {
+  // SAFETY CHECK
+  if (!process.argv.includes('--force')) {
+    console.error('❌ PELIGRO: Este script BORRA TODA LA BASE DE DATOS.');
+    console.error('   Si estás seguro, ejecútalo con: node _DANGEROUS_seed_reset.js --force');
+    process.exit(1);
+  }
+
   try {
     await mongoose.connect(MONGO_URI);
     console.log('🌱 Conectando...');
