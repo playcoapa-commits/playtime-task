@@ -400,7 +400,19 @@ function App() {
                 <tr key={log._id} style={{ backgroundColor: log.status === 'revision' ? '#fff3cd' : 'transparent' }}>
                   <td>
                     {log.status === 'completada' && <span style={{ color: 'green', fontWeight: 'bold' }}>✅ LISTO</span>}
-                    {log.status === 'pendiente' && <span style={{ color: 'orange' }}>⏳ POR HACER</span>}
+                    {log.status === 'pendiente' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                        <span style={{ color: 'orange' }}>⏳ PENDIENTE</span>
+                        <button
+                          style={{ fontSize: '0.8rem', padding: '5px', background: '#3F51B5', border: 'none', color: 'white', borderRadius: '4px', cursor: 'pointer' }}
+                          onClick={(e) => {
+                            if (confirm('¿Forzar completado? Se dará la XP inmediatamente.')) approveTask(log._id, e);
+                          }}
+                        >
+                          ⚡ Completar
+                        </button>
+                      </div>
+                    )}
                     {log.status === 'revision' && (
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <span style={{ color: '#d39e00', fontWeight: 'bold' }}>🕵️ REVISIÓN</span>
