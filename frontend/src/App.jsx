@@ -388,6 +388,7 @@ function App() {
             <thead>
               <tr>
                 <th>Estado</th>
+                <th>Fecha Asignada</th>
                 <th>Hora Terminado</th>
                 <th>Empleado</th>
                 <th>Máquina</th>
@@ -425,6 +426,7 @@ function App() {
                       </div>
                     )}
                   </td>
+                  <td>{formatDate(log.date)}</td>
                   <td className="time-cell">
                     {log.completedAt ? formatDate(log.completedAt) : '-'}
                   </td>
