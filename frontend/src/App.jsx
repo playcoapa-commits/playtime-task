@@ -39,6 +39,7 @@ function App() {
   // Estado para gestión de tareas (CRUD)
   const [availableTasks, setAvailableTasks] = useState([]);
   const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [showTasks, setShowTasks] = useState(false); // Estado para colapsar gestión de tareas
 
   useEffect(() => {
     loadUsers();
@@ -315,40 +316,50 @@ function App() {
 
         {/* SECCIÓN DE GESTIÓN DE TAREAS (CRUD) */}
         <div className="management-section">
-          <h3>🛠️ Gestión de Tareas</h3>
-
-          <div className="management-form">
-            <input
-              type="text"
-              placeholder="Nueva tarea..."
-              value={newTaskTitle}
-              onChange={(e) => setNewTaskTitle(e.target.value)}
-            />
-            <button onClick={addTask} className="add-btn">Agregar Tarea</button>
+          <div
+            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+            onClick={() => setShowTasks(!showTasks)}
+          >
+            <h3>🛠️ Gestión de Tareas</h3>
+            <span>{showTasks ? '▲ Ocultar' : '▼ Mostrar'}</span>
           </div>
 
-          <div className="table-responsive">
-            <table className="report-table">
-              <thead>
-                <tr>
-                  <th>Tarea</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {availableTasks.map(task => (
-                  <tr key={task._id}>
-                    <td>{task.title}</td>
-                    <td>
-                      <button onClick={() => deleteTask(task._id)} className="delete-btn" title="Eliminar">
-                        ✕
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {showTasks && (
+            <>
+              <div className="management-form">
+                <input
+                  type="text"
+                  placeholder="Nueva tarea..."
+                  value={newTaskTitle}
+                  onChange={(e) => setNewTaskTitle(e.target.value)}
+                />
+                <button onClick={addTask} className="add-btn">Agregar Tarea</button>
+              </div>
+
+              <div className="table-responsive">
+                <table className="report-table">
+                  <thead>
+                    <tr>
+                      <th>Tarea</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {availableTasks.map(task => (
+                      <tr key={task._id}>
+                        <td>{task.title}</td>
+                        <td>
+                          <button onClick={() => deleteTask(task._id)} className="delete-btn" title="Eliminar">
+                            ✕
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </div>
 
         {/* SECCIÓN DE GESTIÓN DE PERSONAL (CRUD) */}
