@@ -60,7 +60,10 @@ app.get('/my-tasks/:userId', async (req, res) => {
 
         const tasks = await Assignment.find({
             user: req.params.userId,
-            date: { $gte: startOfDay }
+            $or: [
+                { date: { $gte: startOfDay } },       // Tareas de hoy (todas)
+                { status: { $ne: 'completada' } }     // Tareas pendientes o revisión (históricas)
+            ]
         }).populate('task');
 
         res.json(tasks);
