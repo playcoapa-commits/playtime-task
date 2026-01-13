@@ -222,8 +222,8 @@ function App() {
   };
 
   // Helper para nivel
-  const getLevel = (xp) => Math.floor((xp || 0) / 1000) + 1;
-  const getNextLevelXp = (level) => level * 1000;
+  const getLevel = (xp) => Math.floor((xp || 0) / 200) + 1;
+  const getNextLevelXp = (level) => level * 200;
 
   const showAbout = () => {
     alert("✨ Playtime Task Manager ✨\n\nDesarrollado con ❤️ por: Aldo Chayanne\nVersión: beta (Elemental)");
@@ -655,7 +655,7 @@ const EmployeeManagement = ({ users, adminPassword, refreshUsers, fetchStats }) 
                 <td><small>{u.shift || 'N/A'}</small></td>
                 <td>
                   <div>{TIER_NAMES[u.tier || 1]}</div>
-                  <small>Nivel {Math.floor((u.xp || 0) / 1000) + 1} ({u.xp || 0} XP)</small>
+                  <small>Nivel {Math.floor((u.xp || 0) / 200) + 1} ({u.xp || 0} XP)</small>
                 </td>
                 <td>
                   <button onClick={() => punishUser(u._id, u.name)} className="delete-btn" style={{ background: '#FF5722', marginRight: '5px' }} title="Castigar (Restar XP)">
