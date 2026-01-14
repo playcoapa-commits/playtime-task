@@ -89,7 +89,6 @@ function App() {
   const fetchAvailableTasks = (password) => {
     axios.get(`${API_URL}/tasks`, {
       headers: { 'x-admin-password': password }
-      headers: { 'x-admin-password': password }
     }).then(res => setAvailableTasks(res.data));
   };
 
