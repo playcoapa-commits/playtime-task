@@ -23,6 +23,43 @@ const TIER_THEMES = {
   5: { bg: '#000000', header: '#333333', card: '#111111', text: '#f0f0f0', border: '2px solid rainbow' }
 };
 
+const BADGE_IMAGES = {
+  // Tier 1: Elemental
+  '🌱 La Chispa': '/badges/0.png',
+  '🥉 La Flama Creciente': '/badges/500.png',
+  '🥈 La Ola de Energía': '/badges/2000.png',
+  '🥇 El Núcleo Solar': '/badges/5000.png',
+  '💎 El Prisma Maestro': '/badges/10000.png',
+
+  // Tier 2: Astral
+  '🌌 Polvo Estelar': '/badges/tier2/0.png',
+  '☄️ Llamarada Solar': '/badges/tier2/2000.png',
+  '🌊 Nebulosa Fluyente': '/badges/tier2/4000.png',
+  '🌟 Púlsar Dorado': '/badges/tier2/7000.png',
+  '🌈 Quásar Prismático': '/badges/tier2/10000.png',
+
+  // Tier 3: Celestial
+  '🕊️ Luz Divina': '/badges/tier3/0.png',
+  '🔥 Fuego Sagrado': '/badges/tier3/2000.png',
+  '🌬️ Aliento Creador': '/badges/tier3/4000.png',
+  '👼 Halo Radiante': '/badges/tier3/7000.png',
+  '👑 Corona de Cristal': '/badges/tier3/10000.png',
+
+  // Tier 4: Cósmico
+  '⚛️ Singularidad': '/badges/tier4/0.png',
+  '💥 Supernova': '/badges/tier4/2000.png',
+  '🌀 Vórtice Temporal': '/badges/tier4/4000.png',
+  '🌌 Núcleo Galáctico': '/badges/tier4/7000.png',
+  '🕳️ Matriz Universal': '/badges/tier4/10000.png', // Placeholder (Copy)
+
+  // Tier 5: Universal (Placeholders)
+  '🎆 Partícula Primordial': '/badges/tier5/0.png',
+  '🌌 Expansión Inicial': '/badges/tier5/2000.png',
+  '🕸️ Tejido del Espacio': '/badges/tier5/4000.png',
+  '🪐 Multiverso': '/badges/tier5/7000.png',
+  '♾️ La Fuente': '/badges/tier5/10000.png'
+};
+
 function App() {
   const [view, setView] = useState('login'); // 'login', 'tasks', 'admin'
   const [users, setUsers] = useState([]);
@@ -617,7 +654,11 @@ function App() {
           <strong>Insignias:</strong>
           <div className="badges-container" style={{ marginTop: '5px' }}>
             {currentUser.badges && currentUser.badges.map((badge, i) => (
-              <span key={i} className="badge-item" style={{ background: '#eee', color: '#333', border: '1px solid #ddd' }}>{badge}</span>
+              BADGE_IMAGES[badge] ? (
+                <img key={i} src={BADGE_IMAGES[badge]} title={badge} alt={badge} style={{ width: '48px', height: '48px', margin: '2px', objectFit: 'contain' }} />
+              ) : (
+                <span key={i} className="badge-item" style={{ background: '#eee', color: '#333', border: '1px solid #ddd' }}>{badge}</span>
+              )
             ))}
           </div>
         </div>
