@@ -1,4 +1,4 @@
-const { User, Task, Assignment } = require('./models');
+const { User, Task, Assignment, SystemLog } = require('./models');
 
 // Función para mezclar arrays
 const shuffle = (array) => array.sort(() => Math.random() - 0.5);
@@ -22,6 +22,11 @@ async function assignDailyTasks(force = false) {
 
         if (rolesAssigned) {
             console.log('⚠️ Tareas (Roles) de hoy ya asignadas.');
+            await SystemLog.create({
+                type: 'info',
+                message: 'Intento de reparto duplicado',
+                details: { reason: 'Las tareas ya habían sido asignadas hoy.' }
+            });
             return;
         }
     }
@@ -35,7 +40,15 @@ async function assignDailyTasks(force = false) {
 
     console.log(`📅 Día: ${dayOfWeek}. Usuarios totales: ${users.length}. Trabajando hoy: ${workingUsers.length}`);
 
-    if (workingUsers.length === 0) { console.log('❌ Nadie trabaja hoy.'); return; }
+    if (workingUsers.length === 0) {
+        console.log('❌ Nadie trabaja hoy.');
+        await SystemLog.create({
+            type: 'error',
+            message: 'Sin personal activo hoy',
+            details: { day: dayOfWeek, totalUsers: users.length }
+        });
+        return;
+    }
 
     // Separar por turnos
     const morningUsers = workingUsers.filter(u => u.weeklySchedule[dayOfWeek] === 'matutino');
@@ -71,7 +84,7 @@ async function assignDailyTasks(force = false) {
     assignRoles(morningUsers, morningRoles);
     assignRoles(eveningUsers, eveningRoles);
 
-    // --- FASE 2: ASIGNAR LIMPIEZA DE MÁQUINAS (Solo LUNES - Semanal) ---
+    // --- FASE 2: SE ASIGNA LIMPIEZA DE MÁQUINAS (Solo LUNES - Semanal) ---
     if (dayOfWeek === 1) { // 1 = Lunes
         console.log('🧹 Es LUNES: Asignando limpieza semanal...');
         const cleaningTasks = await Task.find({ type: 'cleaning' });
@@ -103,8 +116,24 @@ async function assignDailyTasks(force = false) {
     if (assignments.length > 0) {
         await Assignment.insertMany(assignments);
         console.log(`🎲 ÉXITO: Se repartieron ${assignments.length} tareas.`);
+
+        await SystemLog.create({
+            type: 'success',
+            message: 'Reparto de tareas completado',
+            details: {
+                totalAssigned: assignments.length,
+                morningStaff: morningUsers.length,
+                eveningStaff: eveningUsers.length
+            }
+        });
+
     } else {
         console.log('ℹ️ No hubo tareas para asignar hoy (o falta personal).');
+        await SystemLog.create({
+            type: 'info',
+            message: 'No se generaron tareas',
+            details: { reason: 'Posible falta de roles o personal disponible.' }
+        });
     }
 }
 

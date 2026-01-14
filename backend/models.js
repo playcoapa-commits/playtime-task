@@ -42,5 +42,11 @@ const assignmentSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 const Task = mongoose.model('Task', taskSchema);
 const Assignment = mongoose.model('Assignment', assignmentSchema);
+const SystemLog = mongoose.model('SystemLog', new mongoose.Schema({
+    date: { type: Date, default: Date.now },
+    type: { type: String, enum: ['info', 'error', 'success'], default: 'info' },
+    message: String,
+    details: Object
+}));
 
-module.exports = { User, Task, Assignment };
+module.exports = { User, Task, Assignment, SystemLog };

@@ -35,11 +35,14 @@ function App() {
 
   // Nuevo Estado para Detalle de Empleado
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
+  const [showLogs, setShowLogs] = useState(false); // Toggle Logs Modal
+  const [systemLogs, setSystemLogs] = useState([]); // Store logs
 
   // Estado para gestión de tareas (CRUD)
   const [availableTasks, setAvailableTasks] = useState([]);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [showTasks, setShowTasks] = useState(false); // Estado para colapsar gestión de tareas
+  const [editingTask, setEditingTask] = useState(null); // Estado para editar tarea
 
   useEffect(() => {
     loadUsers();
@@ -86,7 +89,17 @@ function App() {
   const fetchAvailableTasks = (password) => {
     axios.get(`${API_URL}/tasks`, {
       headers: { 'x-admin-password': password }
+      headers: { 'x-admin-password': password }
     }).then(res => setAvailableTasks(res.data));
+  };
+
+  const fetchLogs = () => {
+    axios.get(`${API_URL}/system-logs`, {
+      headers: { 'x-admin-password': adminPassword }
+    }).then(res => {
+      setSystemLogs(res.data);
+      setShowLogs(true);
+    }).catch(() => alert("Error obteniendo logs"));
   };
 
   const addTask = () => {
@@ -106,6 +119,16 @@ function App() {
     }).then(() => {
       fetchAvailableTasks(adminPassword);
     });
+  };
+
+  const saveTask = (taskId, updatedData) => {
+    axios.put(`${API_URL}/tasks/${taskId}`, updatedData, {
+      headers: { 'x-admin-password': adminPassword }
+    }).then(() => {
+      alert("✅ Tarea actualizada");
+      setEditingTask(null);
+      fetchAvailableTasks(adminPassword);
+    }).catch(() => alert("Error al actualizar tarea"));
   };
 
   const login = (user) => {
@@ -267,8 +290,53 @@ function App() {
       <div className="container admin-container">
         <div className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2>📊 Reporte Operativo</h2>
-          <button onClick={() => setView('login')} className="back-btn">⬅ Salir</button>
+          <h2>📊 Reporte Operativo</h2>
+          <div>
+            <button onClick={fetchLogs} className="back-btn" style={{ background: '#607D8B', marginRight: '10px' }}>📜 Logs Sistema</button>
+            <button onClick={() => setView('login')} className="back-btn">⬅ Salir</button>
+          </div>
         </div>
+
+        {showLogs && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+            background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
+          }}>
+            <div style={{ background: 'white', padding: '20px', borderRadius: '10px', width: '90%', maxWidth: '800px', maxHeight: '80vh', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+                <h3>📜 Logs de Distribución</h3>
+                <button onClick={() => setShowLogs(false)} style={{ border: 'none', background: 'transparent', fontSize: '1.5rem', cursor: 'pointer' }}>✕</button>
+              </div>
+              <table className="report-table" style={{ fontSize: '0.85rem' }}>
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>Mensaje</th>
+                    <th>Detalles</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {systemLogs.map(log => (
+                    <tr key={log._id}>
+                      <td>{new Date(log.date).toLocaleString()}</td>
+                      <td>
+                        <span style={{
+                          padding: '2px 6px', borderRadius: '4px',
+                          background: log.type === 'error' ? '#FFEBEE' : log.type === 'success' ? '#E8F5E9' : '#E3F2FD',
+                          color: log.type === 'error' ? '#D32F2F' : log.type === 'success' ? '#388E3C' : '#1976D2',
+                          fontWeight: 'bold'
+                        }}>{log.type.toUpperCase()}</span>
+                      </td>
+                      <td>{log.message}</td>
+                      <td><pre style={{ margin: 0, fontSize: '0.75rem', background: '#f5f5f5', padding: '5px' }}>{JSON.stringify(log.details, null, 2)}</pre></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* SECCIÓN DE ESTADÍSTICAS */}
         <div className="stats-section">
@@ -341,6 +409,7 @@ function App() {
                   <thead>
                     <tr>
                       <th>Tarea</th>
+                      <th>Tipo/Frecuencia</th>
                       <th>Acciones</th>
                     </tr>
                   </thead>
@@ -348,7 +417,11 @@ function App() {
                     {availableTasks.map(task => (
                       <tr key={task._id}>
                         <td>{task.title}</td>
+                        <td><small>{task.type} / {task.frequency}</small></td>
                         <td>
+                          <button onClick={() => setEditingTask(task)} className="delete-btn" style={{ background: '#2196F3', marginRight: '5px' }} title="Editar">
+                            ✎
+                          </button>
                           <button onClick={() => deleteTask(task._id)} className="delete-btn" title="Eliminar">
                             ✕
                           </button>
@@ -359,6 +432,14 @@ function App() {
                 </table>
               </div>
             </>
+          )}
+
+          {editingTask && (
+            <TaskEditor
+              task={editingTask}
+              onClose={() => setEditingTask(null)}
+              onSave={saveTask}
+            />
           )}
         </div>
 
@@ -600,6 +681,7 @@ function App() {
 
 const EmployeeManagement = ({ users, adminPassword, refreshUsers, fetchStats }) => {
   const [newUserName, setNewUserName] = useState('');
+  const [editingScheduleUser, setEditingScheduleUser] = useState(null);
 
   const addUser = () => {
     if (!newUserName.trim()) return;
@@ -635,6 +717,16 @@ const EmployeeManagement = ({ users, adminPassword, refreshUsers, fetchStats }) 
     }).catch(() => alert("Error al aplicar castigo"));
   };
 
+  const saveSchedule = (userId, newSchedule) => {
+    axios.put(`${API_URL}/users/${userId}`, { weeklySchedule: newSchedule }, {
+      headers: { 'x-admin-password': adminPassword }
+    }).then(() => {
+      alert("✅ Horario actualizado");
+      setEditingScheduleUser(null);
+      refreshUsers();
+    }).catch(() => alert("Error al guardar horario"));
+  };
+
   return (
     <div className="management-section" style={{ marginTop: '20px' }}>
       <h3>👥 Gestión de Personal</h3>
@@ -654,7 +746,7 @@ const EmployeeManagement = ({ users, adminPassword, refreshUsers, fetchStats }) 
           <thead>
             <tr>
               <th>Nombre</th>
-              <th>Turno</th>
+              <th>Horario Semanal</th>
               <th>Nivel/XP</th>
               <th>Acciones</th>
             </tr>
@@ -663,7 +755,17 @@ const EmployeeManagement = ({ users, adminPassword, refreshUsers, fetchStats }) 
             {users.map(u => (
               <tr key={u._id}>
                 <td>{u.name}</td>
-                <td><small>{u.shift || 'N/A'}</small></td>
+                <td>
+                  <button
+                    onClick={() => setEditingScheduleUser(u)}
+                    style={{ fontSize: '0.8rem', background: '#2196F3', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                  >
+                    📅 Editar Horario
+                  </button>
+                  <div style={{ fontSize: '0.7rem', marginTop: '5px', color: '#666' }}>
+                    Hoy: {u.weeklySchedule ? u.weeklySchedule[new Date().getDay()] : '-'}
+                  </div>
+                </td>
                 <td>
                   <div>{TIER_NAMES[u.tier || 1]}</div>
                   <small>Nivel {Math.floor((u.xp || 0) / 200) + 1} ({u.xp || 0} XP)</small>
@@ -680,6 +782,56 @@ const EmployeeManagement = ({ users, adminPassword, refreshUsers, fetchStats }) 
             ))}
           </tbody>
         </table>
+      </div>
+
+      {editingScheduleUser && (
+        <ScheduleEditor
+          user={editingScheduleUser}
+          onClose={() => setEditingScheduleUser(null)}
+          onSave={saveSchedule}
+        />
+      )}
+    </div>
+  );
+};
+
+const ScheduleEditor = ({ user, onClose, onSave }) => {
+  const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  const [schedule, setSchedule] = useState(user.weeklySchedule || Array(7).fill('descanso'));
+
+  const handleChange = (index, value) => {
+    const newSched = [...schedule];
+    newSched[index] = value;
+    setSchedule(newSched);
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+      background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
+    }}>
+      <div style={{ background: 'white', padding: '20px', borderRadius: '10px', width: '90%', maxWidth: '500px' }}>
+        <h3>📅 Horario de {user.name}</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', margin: '20px 0' }}>
+          {days.map((day, i) => (
+            <div key={i} style={{ marginBottom: '5px' }}>
+              <strong>{day}:</strong>
+              <select
+                value={schedule[i]}
+                onChange={(e) => handleChange(i, e.target.value)}
+                style={{ width: '100%', padding: '5px', marginTop: '3px' }}
+              >
+                <option value="matutino">🌅 Matutino</option>
+                <option value="vespertino">🌙 Vespertino</option>
+                <option value="descanso">💤 Descanso</option>
+              </select>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+          <button onClick={onClose} style={{ background: '#ccc', border: 'none', padding: '10px', borderRadius: '5px', cursor: 'pointer' }}>Cancelar</button>
+          <button onClick={() => onSave(user._id, schedule)} style={{ background: '#4CAF50', color: 'white', border: 'none', padding: '10px', borderRadius: '5px', cursor: 'pointer' }}>Guardar Cambios</button>
+        </div>
       </div>
     </div>
   );
@@ -820,6 +972,65 @@ const EmployeeDetail = ({ userId, adminPassword, onBack }) => {
         </table>
       </div>
 
+    </div>
+  );
+};
+
+const TaskEditor = ({ task, onClose, onSave }) => {
+  const [data, setData] = useState({
+    title: task.title,
+    description: task.description || '',
+    xpReward: task.xpReward || 100,
+    type: task.type || 'cleaning',
+    frequency: task.frequency || 'diaria',
+    shift: task.shift || 'general'
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setData(prev => ({ ...prev, [name]: value }));
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+      background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
+    }}>
+      <div style={{ background: 'white', padding: '20px', borderRadius: '10px', width: '90%', maxWidth: '400px' }}>
+        <h3>✏️ Editar Tarea</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', margin: '20px 0' }}>
+          <input name="title" value={data.title} onChange={handleChange} placeholder="Título" style={{ padding: '8px' }} />
+          <textarea name="description" value={data.description} onChange={handleChange} placeholder="Descripción" style={{ padding: '8px' }} />
+
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <label>XP:</label>
+            <input name="xpReward" type="number" value={data.xpReward} onChange={handleChange} style={{ padding: '5px', width: '60px' }} />
+          </div>
+
+          <label>Tipo:</label>
+          <select name="type" value={data.type} onChange={handleChange} style={{ padding: '8px' }}>
+            <option value="cleaning">Limpieza / General</option>
+            <option value="role">Rol de Turno</option>
+          </select>
+
+          <label>Frecuencia:</label>
+          <select name="frequency" value={data.frequency} onChange={handleChange} style={{ padding: '8px' }}>
+            <option value="diaria">Diaria</option>
+            <option value="semanal">Semanal</option>
+          </select>
+
+          <label>Turno:</label>
+          <select name="shift" value={data.shift} onChange={handleChange} style={{ padding: '8px' }}>
+            <option value="general">General (Cualquiera)</option>
+            <option value="matutino">Matutino</option>
+            <option value="vespertino">Vespertino</option>
+          </select>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+          <button onClick={onClose} style={{ background: '#ccc', border: 'none', padding: '10px', borderRadius: '5px', cursor: 'pointer' }}>Cancelar</button>
+          <button onClick={() => onSave(task._id, data)} style={{ background: '#4CAF50', color: 'white', border: 'none', padding: '10px', borderRadius: '5px', cursor: 'pointer' }}>Guardar</button>
+        </div>
+      </div>
     </div>
   );
 };

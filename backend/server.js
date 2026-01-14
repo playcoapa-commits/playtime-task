@@ -3,7 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const cron = require('node-cron');
-const { User, Assignment, Task } = require('./models');
+const { User, Assignment, Task, SystemLog } = require('./models');
 
 // --- CONFIGURACIÓN DE TIERS Y BADGES ---
 const TIERS_CONFIG = {
@@ -261,6 +261,22 @@ app.get('/tasks', async (req, res) => {
     }
 });
 
+app.put('/tasks/:id', async (req, res) => {
+    const password = req.headers['x-admin-password'];
+    if (password !== ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Contraseña incorrecta' });
+    }
+    try {
+        const { title, description, xpReward, frequency, type, shift } = req.body;
+        const updatedTask = await Task.findByIdAndUpdate(req.params.id, {
+            title, description, xpReward, frequency, type, shift
+        }, { new: true });
+        res.json(updatedTask);
+    } catch (err) {
+        res.status(500).json({ error: 'Error al actualizar tarea' });
+    }
+});
+
 app.post('/tasks', async (req, res) => {
     const password = req.headers['x-admin-password'];
     if (password !== ADMIN_PASSWORD) {
@@ -304,6 +320,22 @@ app.post('/users', async (req, res) => {
         res.json(newUser);
     } catch (err) {
         res.status(500).json({ error: 'Error al crear usuario' });
+    }
+});
+
+app.put('/users/:id', async (req, res) => {
+    const password = req.headers['x-admin-password'];
+    if (password !== ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Contraseña incorrecta' });
+    }
+    try {
+        const { name, weeklySchedule, role, active } = req.body;
+        const updatedUser = await User.findByIdAndUpdate(req.params.id, {
+            name, weeklySchedule, role, active
+        }, { new: true });
+        res.json(updatedUser);
+    } catch (err) {
+        res.status(500).json({ error: 'Error al actualizar usuario' });
     }
 });
 
@@ -441,6 +473,20 @@ app.put('/assignments/:id/delegate', async (req, res) => {
 app.post('/force-assign', async (req, res) => {
     await assignDailyTasks(true);
     res.send('Asignación forzada completada');
+});
+
+// 7. LOGS DEL SISTEMA
+app.get('/system-logs', async (req, res) => {
+    const password = req.headers['x-admin-password'];
+    if (password !== ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Contraseña incorrecta' });
+    }
+    try {
+        const logs = await SystemLog.find().sort({ date: -1 }).limit(50);
+        res.json(logs);
+    } catch (err) {
+        res.status(500).json({ error: 'Error al obtener logs' });
+    }
 });
 
 // --- AUTOMATIZACIÓN ---
