@@ -80,6 +80,7 @@ function App() {
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [showTasks, setShowTasks] = useState(false); // Estado para colapsar gestión de tareas
   const [editingTask, setEditingTask] = useState(null); // Estado para editar tarea
+  const [nameFilter, setNameFilter] = useState(''); // Estado para filtrar por nombre en el registro diario
 
   useEffect(() => {
     loadUsers();
@@ -511,6 +512,21 @@ function App() {
         <hr />
 
         <h3>📅 Registro Diario</h3>
+        <div style={{ marginBottom: '10px' }}>
+          <input
+            type="text"
+            placeholder="Filtrar por nombre de trabajador..."
+            value={nameFilter}
+            onChange={(e) => setNameFilter(e.target.value)}
+            style={{
+              padding: '8px',
+              borderRadius: '4px',
+              border: '1px solid #ccc',
+              width: '100%',
+              maxWidth: '300px'
+            }}
+          />
+        </div>
         <div className="table-responsive">
           <table className="report-table">
             <thead>
@@ -525,7 +541,9 @@ function App() {
               </tr>
             </thead>
             <tbody>
-              {report.map(log => (
+              {report.filter(log =>
+                !nameFilter || (log.user?.name || 'Desconocido').toLowerCase().includes(nameFilter.toLowerCase())
+              ).map(log => (
                 <tr key={log._id} style={{ backgroundColor: log.status === 'revision' ? '#fff3cd' : 'transparent' }}>
                   <td>
                     {log.status === 'completada' && <span style={{ color: 'green', fontWeight: 'bold' }}>✅ LISTO</span>}
