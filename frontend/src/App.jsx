@@ -81,9 +81,11 @@ function App() {
   const [showTasks, setShowTasks] = useState(false); // Estado para colapsar gestión de tareas
   const [editingTask, setEditingTask] = useState(null); // Estado para editar tarea
   const [nameFilter, setNameFilter] = useState(''); // Estado para filtrar por nombre en el registro diario
+  const [showWelcomeMessage, setShowWelcomeMessage] = useState(false); // Estado para el mensaje de bienvenida
 
   useEffect(() => {
     loadUsers();
+    setShowWelcomeMessage(true); // Mostrar mensaje al abrir la app
   }, []);
 
   const loadUsers = () => {
@@ -294,6 +296,7 @@ function App() {
   if (view === 'login') {
     return (
       <div className="container">
+        <WelcomeModal show={showWelcomeMessage} onClose={() => setShowWelcomeMessage(false)} />
         <div className="brand-header">
           <img
             src="https://playtime.lat/wp-content/themes/playtimewp/app/img/playtime.svg"
@@ -325,6 +328,7 @@ function App() {
   if (view === 'admin') {
     return (
       <div className="container admin-container">
+        <WelcomeModal show={showWelcomeMessage} onClose={() => setShowWelcomeMessage(false)} />
         <div className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2>📊 Reporte Operativo</h2>
           <h2>📊 Reporte Operativo</h2>
@@ -611,11 +615,14 @@ function App() {
   // --- VISTA 2.5: DETALLE DE EMPLEADO (DASHBOARD INDIVIDUAL) ---
   if (view === 'employee_detail') {
     return (
-      <EmployeeDetail
-        userId={selectedEmployeeId}
-        adminPassword={adminPassword}
-        onBack={() => setView('admin')}
-      />
+      <>
+        <WelcomeModal show={showWelcomeMessage} onClose={() => setShowWelcomeMessage(false)} />
+        <EmployeeDetail
+          userId={selectedEmployeeId}
+          adminPassword={adminPassword}
+          onBack={() => setView('admin')}
+        />
+      </>
     );
   }
 
@@ -647,6 +654,7 @@ function App() {
 
   return (
     <div style={containerStyle}> {/* Replaces className="container" default style */}
+      <WelcomeModal show={showWelcomeMessage} onClose={() => setShowWelcomeMessage(false)} />
       <div className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
           <h2 style={{ margin: 0 }}>Hola, {currentUser.name} 👋</h2>
@@ -736,6 +744,27 @@ function App() {
     </div>
   );
 }
+
+// --- COMPONENTE: MODAL DE BIENVENIDA ---
+const WelcomeModal = ({ show, onClose }) => {
+  if (!show) return null;
+
+  return (
+    <div className="welcome-modal-overlay">
+      <div className="welcome-modal-content">
+        <div className="welcome-modal-header">
+          <h3>✨ ¡Atención Equipo! ✨</h3>
+        </div>
+        <div className="welcome-modal-body">
+          <p>Hola equipo, por favor hay que personalizar clientes, Aurelio y Ale les daran experiencia por cada cliente personalizado que hagan, gracias y Animo, Chay ❤️</p>
+        </div>
+        <div className="welcome-modal-footer">
+          <button onClick={onClose} className="welcome-modal-btn">Entendido 👍</button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const EmployeeManagement = ({ users, adminPassword, refreshUsers, fetchStats }) => {
   const [newUserName, setNewUserName] = useState('');
