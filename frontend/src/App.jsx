@@ -756,7 +756,7 @@ const WelcomeModal = ({ show, onClose }) => {
           <h3>✨ ¡Atención Equipo! ✨</h3>
         </div>
         <div className="welcome-modal-body">
-          <p>Hola equipo, por favor hay que personalizar clientes, Aurelio y Ale les daran experiencia por cada cliente personalizado que hagan, gracias y Animo, Chay ❤️</p>
+          <p>Hola equipo, por favor hay que personalizar clientes, Aurelio y Dana les daran experiencia por cada cliente personalizado que hagan, gracias y Animo, Chay ❤️</p>
         </div>
         <div className="welcome-modal-footer">
           <button onClick={onClose} className="welcome-modal-btn">Entendido 👍</button>
