@@ -82,6 +82,7 @@ function App() {
   const [editingTask, setEditingTask] = useState(null); // Estado para editar tarea
   const [nameFilter, setNameFilter] = useState(''); // Estado para filtrar por nombre en el registro diario
   const [showWelcomeMessage, setShowWelcomeMessage] = useState(false); // Estado para el mensaje de bienvenida
+  const [showAdminNotice, setShowAdminNotice] = useState(false); // Estado para el aviso de actualización
 
   useEffect(() => {
     loadUsers();
@@ -105,6 +106,9 @@ function App() {
         fetchStats(password);
         fetchAvailableTasks(password); // Cargamos las tareas disponibles
         setView('admin');
+        if (!localStorage.getItem('adminNoticeDismissed_v2')) {
+          setShowAdminNotice(true);
+        }
       })
       .catch(err => {
         if (err.response && err.response.status === 401) {
@@ -338,9 +342,10 @@ function App() {
           </div>
         </div>
 
-        <div style={{ background: '#E3F2FD', padding: '15px', borderRadius: '8px', marginBottom: '20px', borderLeft: '5px solid #2196F3' }}>
-          <strong>🚀 Novedades:</strong> Se agregaron opciones en la tabla de gestión de personal. Ahora puedes <b>Forzar Ascensión</b> (🚀) o <b>Reiniciar XP</b> (🔄) para ajustar la experiencia y rango de los empleados en caso de errores en la asignación de Tier o XP.
-        </div>
+        <AdminNoticeModal show={showAdminNotice} onClose={() => {
+          localStorage.setItem('adminNoticeDismissed_v2', 'true');
+          setShowAdminNotice(false);
+        }} />
 
         {showLogs && (
           <div style={{
@@ -764,6 +769,29 @@ const WelcomeModal = ({ show, onClose }) => {
         </div>
         <div className="welcome-modal-footer">
           <button onClick={onClose} className="welcome-modal-btn">Entendido 👍</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- COMPONENTE: MODAL DE AVISO ADMINISTRADOR ---
+const AdminNoticeModal = ({ show, onClose }) => {
+  if (!show) return null;
+
+  return (
+    <div className="welcome-modal-overlay" style={{ zIndex: 10000 }}>
+      <div className="welcome-modal-content" style={{ border: '3px solid #2196F3', maxWidth: '500px' }}>
+        <div className="welcome-modal-header" style={{ background: '#2196F3' }}>
+          <h3>🚀 Novedades de Gerencia 🚀</h3>
+        </div>
+        <div className="welcome-modal-body">
+          <p>
+            Se han agregado opciones en la tabla de gestión de personal. Ahora puedes <b>Forzar Ascensión (🚀)</b> para saltar Tiers inmediatamente, o <b>Reiniciar XP (🔄)</b> para corregir empleados asignados accidentalmente a niveles incorrectos.
+          </p>
+        </div>
+        <div className="welcome-modal-footer">
+          <button onClick={onClose} className="welcome-modal-btn" style={{ background: '#2196F3' }}>Aceptar y no mostrar más</button>
         </div>
       </div>
     </div>
