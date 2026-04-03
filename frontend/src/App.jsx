@@ -338,6 +338,10 @@ function App() {
           </div>
         </div>
 
+        <div style={{ background: '#E3F2FD', padding: '15px', borderRadius: '8px', marginBottom: '20px', borderLeft: '5px solid #2196F3' }}>
+          <strong>🚀 Novedades:</strong> Se agregaron opciones en la tabla de gestión de personal. Ahora puedes <b>Forzar Ascensión</b> (🚀) o <b>Reiniciar XP</b> (🔄) para ajustar la experiencia y rango de los empleados en caso de errores en la asignación de Tier o XP.
+        </div>
+
         {showLogs && (
           <div style={{
             position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
