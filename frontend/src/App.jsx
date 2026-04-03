@@ -804,6 +804,28 @@ const EmployeeManagement = ({ users, adminPassword, refreshUsers, fetchStats }) 
     }).catch(() => alert("Error al aplicar castigo"));
   };
 
+  const resetXP = (id, name) => {
+    if (!confirm(`⚠️ ¿Deseas reiniciar TODA la experiencia y nivel de ${name} al inicio de Tier 1? Esto no se puede deshacer.`)) return;
+    axios.post(`${API_URL}/admin/reset-xp`, { userId: id }, {
+      headers: { 'x-admin-password': adminPassword }
+    }).then(res => {
+      alert("✅ " + res.data.message);
+      refreshUsers();
+      fetchStats();
+    }).catch(err => alert(err.response?.data?.error || "Error al reiniciar XP"));
+  };
+
+  const forceAscend = (id, name) => {
+    if (!confirm(`🚀 ¿Deseas forzar la ascensión de ${name} al SIGUIENTE TIER? Esto reiniciará su XP en ese plano.`)) return;
+    axios.post(`${API_URL}/admin/force-ascend`, { userId: id }, {
+      headers: { 'x-admin-password': adminPassword }
+    }).then(res => {
+      alert("✅ " + res.data.message);
+      refreshUsers();
+      fetchStats();
+    }).catch(err => alert(err.response?.data?.error || "Error al forzar ascensión"));
+  };
+
   const saveSchedule = (userId, newSchedule) => {
     axios.put(`${API_URL}/users/${userId}`, { weeklySchedule: newSchedule }, {
       headers: { 'x-admin-password': adminPassword }
@@ -858,8 +880,14 @@ const EmployeeManagement = ({ users, adminPassword, refreshUsers, fetchStats }) 
                   <small>Nivel {Math.floor((u.xp || 0) / 200) + 1} ({u.xp || 0} XP)</small>
                 </td>
                 <td>
+                  <button onClick={() => forceAscend(u._id, u.name)} className="delete-btn" style={{ background: '#4CAF50', marginRight: '5px' }} title="Forzar Ascensión">
+                    🚀
+                  </button>
                   <button onClick={() => punishUser(u._id, u.name)} className="delete-btn" style={{ background: '#FF5722', marginRight: '5px' }} title="Castigar (Restar XP)">
                     ⚡
+                  </button>
+                  <button onClick={() => resetXP(u._id, u.name)} className="delete-btn" style={{ background: '#FF9800', marginRight: '5px' }} title="Reiniciar XP a 0">
+                    🔄
                   </button>
                   <button onClick={() => deleteUser(u._id)} className="delete-btn" title="Despedir">
                     ✕

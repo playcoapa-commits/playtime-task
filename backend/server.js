@@ -424,6 +424,53 @@ app.post('/ascend', async (req, res) => {
     }
 });
 
+// 4.7. REINICIAR XP A CERO (ADMIN)
+app.post('/admin/reset-xp', async (req, res) => {
+    const password = req.headers['x-admin-password'];
+    if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Contraseña incorrecta' });
+
+    try {
+        const { userId } = req.body;
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+        user.xp = 0;
+        user.tier = 1;
+        user.badges = [TIERS_CONFIG[1].badges[0]]; // Insignia base elemental
+        await user.save();
+
+        res.json({ success: true, message: 'XP e Historial reiniciados a Nivel 1' });
+    } catch (err) {
+        res.status(500).json({ error: 'Error al reiniciar XP' });
+    }
+});
+
+// 4.8. FORZAR ASCENSIÓN (ADMIN)
+app.post('/admin/force-ascend', async (req, res) => {
+    const password = req.headers['x-admin-password'];
+    if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Contraseña incorrecta' });
+
+    try {
+        const { userId } = req.body;
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+        if ((user.tier || 1) >= 5) {
+            return res.status(400).json({ error: 'El usuario ya ha alcanzado el nivel máximo (Tier 5).' });
+        }
+
+        user.tier = (user.tier || 1) + 1;
+        user.xp = 0;
+        const newBadge = TIERS_CONFIG[user.tier].badges[0];
+        user.badges = [newBadge];
+
+        await user.save();
+        res.json({ success: true, message: `Ascendido correctamente a Tier ${user.tier}` });
+    } catch (err) {
+        res.status(500).json({ error: 'Error al forzar ascensión' });
+    }
+});
+
 // 5. ASIGNACIÓN MANUAL DE TAREAS
 app.post('/assign', async (req, res) => {
     const password = req.headers['x-admin-password'];
